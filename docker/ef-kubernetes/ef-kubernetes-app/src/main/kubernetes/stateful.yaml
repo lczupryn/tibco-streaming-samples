@@ -7,9 +7,6 @@ metadata:
 spec:
   selector:
     app: ef-kubernetes-app
-  ports:
-    - port: 80
-      name: web
   clusterIP: None
 ---
 apiVersion: apps/v1
@@ -32,9 +29,34 @@ spec:
         - name: ef-kubernetes-app
           image: docker/ef-kubernetes-app:1.0.0
           imagePullPolicy: Never
-          ports:
-          - containerPort: 80
-            name: web
+          #readinessProbe:
+          #  tcpSocket:
+          #    port: 8008
+          #  initialDelaySeconds: 30
+          #  periodSeconds: 10
+          #livenessProbe:
+          #  tcpSocket:
+          #    port: 8008
+          #  initialDelaySeconds: 15
+          #  periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /healthcheck/v1/status
+              port: 8008
+              httpHeaders:
+              - name: Authorization
+                value: Basic dGliY286dGliY28=
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthcheck/v1/status
+              port: 8008
+              httpHeaders:
+              - name: Authorization
+                value: Basic dGliY286dGliY28=
+            initialDelaySeconds: 30
+            periodSeconds: 10
       dnsPolicy: "None"
       dnsConfig:
         nameservers:

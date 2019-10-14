@@ -10,10 +10,8 @@ This sample describes how to deploy an application archive containing an EventFl
 * [Example kubernetes commands](#example-kubernetes-commands)
 
 
-FIX THIS - TODO -
+**FIX THIS - TODO -**
 
-* heath check
-* replace web port number
 * add cluster monitor ?
 * show web admin ?
 
@@ -21,7 +19,7 @@ FIX THIS - TODO -
 
 ## Prerequisites
 
-In addition to docker (see main docker sample FIX THIS - ADD LINK), Kubernetes is also required to be
+In addition to docker (see main docker sample **FIX THIS - ADD LINK**), Kubernetes is also required to be
 installed and configured.
 
 When using docker desktop, this can most easily be archived by enabling Kubernetes :
@@ -34,7 +32,7 @@ When using docker desktop, this can most easily be archived by enabling Kubernet
 
 Create a new StreamBase Project and enable both Docker and Kubernetes :
 
-FIX THIS - show animated gif of creating new project
+**FIX THIS - show animated gif of creating new project**
 
 The resulting project contains maven rules for building a docker image containing the application and 
 the necessary Kubernetes configurations for deployment.
@@ -43,29 +41,29 @@ The Kubernetes configurations include -
 
 * [stateful.yaml](../../../src/main/kubernetes/stateful.yaml) - Kubernetes Service and StatefulSet definition for a scaling cluster
 * [security.conf](../../../src/main/configurations/security.conf) - Trusted hosts names need to match Kubernetes DNS names
-* [start-node](../../../src/main/docker/base/start-node) - Script updated to default NODENAME if not set
+* [start-node](../../../src/main/docker/base/start-node) - Script updated to set a default NODENAME if not set and to set node username and password
 
-FIX THIS - current version of Kitematic doesn't display container logs.  I've been using the older 0.17.6
-from https://github.com/docker/kitematic/releases/download/v0.17.6/Kitematic-0.17.6-Mac.zip
+**FIX THIS - current version of Kitematic doesn't display container logs.  I've been using the older 0.17.6 from https://github.com/docker/kitematic/releases/download/v0.17.6/Kitematic-0.17.6-Mac.zip **
 
 <a name="containers-and-nodes"></a>
 
 ## Containers and nodes
 
-FIX THIS - describe statefulstate ( this gives us sensible DNS/hostname, templates and scaling )
-FIX THIS - add some diagrams showing the Kubernetes deployment
+**FIX THIS - describe statefulstate ( this gives us sensible DNS/hostname, templates and scaling )**
+
+**FIX THIS - add some diagrams showing the Kubernetes deployment**
 
 <a name="building-and-running-from-tibco-streambase-studio-trade"></a>
 
 ## Building and running from TIBCO StreamBase Studio&trade;
 
-FIX THIS - look for useful Studio plugins
+**FIX THIS - look for useful Studio plugins**
 
 <a name="building-this-sample-from-the-command-line-and-running-the-integration-test-cases"></a>
 
 ## Building this sample from the command line and running the integration test cases
 
-Running **mvn install** will -
+Running *mvn install* will :
 
 * Build the eventflow fragment
 * Run eventflow fragment unit test cases
@@ -76,9 +74,9 @@ Running **mvn install** will -
 * If docker is not installed -
     * Run basic system test cases natively
 
-FIX THIS - add animated gif
+**FIX THIS - add animated gif**
 
-To start the cluster use the **kubectl apply** command :
+To start the cluster use the *kubectl apply* command :
 
 ```
 $ kubectl apply -f ef-kubernetes-app/src/main/kubernetes/stateful.yaml
@@ -86,7 +84,7 @@ service/ef-kubernetes-app created
 statefulset.apps/ef-kubernetes-app created
 ```
 
-The **kubectl describe** command sgive further details :
+The *kubectl describe* command gives further details :
 
 ```
 $ kubectl describe service ef-kubernetes-app
@@ -98,46 +96,45 @@ Annotations:       kubectl.kubernetes.io/last-applied-configuration:
 Selector:          app=ef-kubernetes-app
 Type:              ClusterIP
 IP:                None
-Port:              web  80/TCP
-TargetPort:        80/TCP
-Endpoints:         10.1.0.67:80,10.1.0.68:80,10.1.0.69:80
 Session Affinity:  None
 Events:            <none>
 
 $ kubectl describe statefulset ef-kubernetes-app
 Name:               ef-kubernetes-app
 Namespace:          default
-CreationTimestamp:  Mon, 14 Oct 2019 13:59:19 +0100
+CreationTimestamp:  Mon, 14 Oct 2019 18:31:37 +0100
 Selector:           app=ef-kubernetes-app
 Labels:             <none>
 Annotations:        kubectl.kubernetes.io/last-applied-configuration:
                       {"apiVersion":"apps/v1","kind":"StatefulSet","metadata":{"annotations":{},"name":"ef-kubernetes-app","namespace":"default"},"spec":{"repli...
 Replicas:           3 desired | 3 total
 Update Strategy:    RollingUpdate
-  Partition:        824642045692
+  Partition:        824638312156
 Pods Status:        3 Running / 0 Waiting / 0 Succeeded / 0 Failed
 Pod Template:
   Labels:  app=ef-kubernetes-app
   Containers:
    ef-kubernetes-app:
     Image:        docker/ef-kubernetes-app:1.0.0
-    Port:         80/TCP
-    Host Port:    0/TCP
+    Port:         <none>
+    Host Port:    <none>
+    Liveness:     http-get http://:8008/healthcheck/v1/status delay=30s timeout=1s period=10s #success=1 #failure=3
+    Readiness:    http-get http://:8008/healthcheck/v1/status delay=30s timeout=1s period=10s #success=1 #failure=3
     Environment:  <none>
     Mounts:       <none>
   Volumes:        <none>
 Volume Claims:    <none>
 Events:
-  Type    Reason            Age    From                    Message
-  ----    ------            ----   ----                    -------
-  Normal  SuccessfulCreate  8m47s  statefulset-controller  create Pod ef-kubernetes-app-0 in StatefulSet ef-kubernetes-app successful
-  Normal  SuccessfulCreate  8m45s  statefulset-controller  create Pod ef-kubernetes-app-1 in StatefulSet ef-kubernetes-app successful
-  Normal  SuccessfulCreate  8m43s  statefulset-controller  create Pod ef-kubernetes-app-2 in StatefulSet ef-kubernetes-app successful
+  Type    Reason            Age   From                    Message
+  ----    ------            ----  ----                    -------
+  Normal  SuccessfulCreate  45m   statefulset-controller  create Pod ef-kubernetes-app-0 in StatefulSet ef-kubernetes-app successful
+  Normal  SuccessfulCreate  44m   statefulset-controller  create Pod ef-kubernetes-app-1 in StatefulSet ef-kubernetes-app successful
+  Normal  SuccessfulCreate  43m   statefulset-controller  create Pod ef-kubernetes-app-2 in StatefulSet ef-kubernetes-app successful
 ```
 
 The configuration file defines 3 replicas and so 3 POD's were created ( ef-kubernetes-app-0, ef-kubernetes-app-1 and ef-kubernetes-app-2 ).
 
-To view the logs use **kubectl logs** :
+To view the logs use *kubectl logs* :
 
 ```
 $ kubectl logs ef-kubernetes-app-0
@@ -169,7 +166,7 @@ $ kubectl logs ef-kubernetes-app-0
 COMMAND FINISHED
 ```
 
-epadmin commands can be run with **kubectl exec** :
+epadmin commands can be run with *kubectl exec* :
 
 ```
 $ kubectl exec ef-kubernetes-app-0 epadmin servicename=ef-kubernetes-app-0.ef-kubernetes-app display cluster
@@ -196,7 +193,7 @@ $ kubectl exec ef-kubernetes-app-0 epadmin servicename=ef-kubernetes-app-0.ef-ku
 
 ## Example kubernetes commands
 
-To scale up the cluster we can increase the number of replicas with the **kubectl scale** command :
+To scale up the cluster we can increase the number of replicas with the *kubectl scale* command :
 
 ```
 $ kubectl scale statefulsets ef-kubernetes-app --replicas=4
@@ -236,14 +233,34 @@ $ kubectl exec ef-kubernetes-app-0 epadmin servicename=ef-kubernetes-app-0.ef-ku
 
 ```
 
-Similarly, to scale down we can reduce the number of replicas with the **kubectl scale** command :
+Similarly, to scale down we can reduce the number of replicas with the *kubectl scale* command :
 
 ```
 $ kubectl scale statefulsets ef-kubernetes-app --replicas=3
 statefulset.apps/ef-kubernetes-app scaled
 ```
 
-To delete the service and statefulset, use the kubectl delete command :
+To check POD status use the *kubectl get* command :
+
+```
+$ kubectl get pod  
+NAME                  READY   STATUS    RESTARTS   AGE
+ef-kubernetes-app-0   1/1     Running   0          46m
+ef-kubernetes-app-1   1/1     Running   0          45m
+ef-kubernetes-app-2   1/1     Running   0          45m
+```
+
+Should a pod fail, the healthcheck should cause a re-start :
+
+```
+$ kubectl get pods 
+NAME                  READY   STATUS    RESTARTS   AGE
+ef-kubernetes-app-0   1/1     Running   0          55m
+ef-kubernetes-app-1   1/1     Running   0          54m
+ef-kubernetes-app-2   1/1     Running   1          53m
+```
+
+To delete the service and statefulset, use the *kubectl delete* command :
 
 ```
 $ kubectl delete service ef-kubernetes-app
@@ -302,5 +319,4 @@ The web-ui-dashboard can be found at http://localhost:8001/api/v1/namespaces/kub
 with token credentials as exported above :
 
 ![resources](images/web-ui.png)
-
 

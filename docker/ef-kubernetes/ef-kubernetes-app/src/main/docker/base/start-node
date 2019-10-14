@@ -67,7 +67,7 @@ rm -rf ${RUNTIME_HOME}/node/${NODENAME}
 #
 # install and start nodes
 #
-epadmin install node \
+epadmin --username=${USER_NAME} --password=${USER_NAME} install node \
     --adminport=2000 \
     --nodename=${NODENAME} \
     --nodedirectory=${RUNTIME_HOME}/node \
