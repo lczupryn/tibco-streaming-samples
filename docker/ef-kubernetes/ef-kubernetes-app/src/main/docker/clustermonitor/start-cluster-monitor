@@ -1,3 +1,5 @@
+#!/bin/sh
+#
 #  Copyright (C) 2018-2019, TIBCO Software Inc.
 #  
 #  Redistribution and use in source and binary forms, with or without
@@ -25,70 +27,43 @@
 #  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
+#
+# script to start node inside docker container
+#
+# Requires :
+#
+#   PRODUCT_HOME    the location of the StreamBase installation
+#   RUNTIME_HOME    the location of nodes, application and configuration
+#   NODENAME        the node name to use
+#
+# Optionally :
+#
+#   NODEDEPLOY      path of node deploy configuration file (default is to use application archive)
+#   SUBSTITUTIONS   substitution parameters (default is none)
 
-FROM centos:7
-
-LABEL description="StreamBase Base"
-
-#
-# Set environment
-#
-ENV PRODUCT_HOME     /opt/tibco/streambase
-ENV RUNTIME_HOME     /var/opt/tibco/streambase
-ENV JAVA_HOME        /etc/alternatives/jre
-ENV PATH             /bin:/usr/sbin:${PRODUCT_HOME}/distrib/tibco/bin
-ENV USER_NAME        tibco
-
-#
-# Add required additional packages
-#
-# systat    required for runtime statistcs
-# gdb       required for crash dumps
-# java      required for applications
-# zip       required for snapshots
-# unzip     required to unpack runtime on windows
-# net-tools useful to diagnose network issues
-# iptables  useful to simulate network issues
-# tc        useful to simulate network issues
-#
-RUN yum --assumeyes install \
-    sysstat \
-    gdb \
-    java-1.8.0-openjdk \
-    zip \
-    unzip \
-    net-tools \
-    iptables \
-    tc \
-    telnet \
-    && yum clean all
+if [  "${NODENAME}" == "" ]
+then
+	NODENAME=$(hostname).clustermonitor
+fi
 
 #
-# Create a user to run nodes
+# clean up from any previous run
 #
-RUN /usr/sbin/useradd \
-    --comment "TIBCO StreamBase Guest User" \
-    --create-home \
-    --user-group \
-    --password ${USER_NAME} \
-    --shell /bin/bash \
-    ${USER_NAME}
+rm -rf ${RUNTIME_HOME}/node/${NODENAME}
 
 #
-# Install runtime
+# install and start nodes
 #
-RUN mkdir -p ${PRODUCT_HOME}
-COPY maven ${PRODUCT_HOME}
-RUN chmod a+x ${PRODUCT_HOME}/start-node
-RUN ${docker.run.unpack}
+epadmin --username=${USER_NAME} --password=${USER_NAME} install node \
+    --adminport=2000 \
+    --nodename=${NODENAME} \
+    --nodedirectory=${RUNTIME_HOME}/node \
+    --substitutions=NODE_NAME=${NODENAME} \
+    --application=${PRODUCT_HOME}/distrib/tibco/sb/applications/cluster-monitor.zip
+epadmin --servicename=${NODENAME} start node
 
 #
-# Allow user access to nodes and applications
+# indicate that we've started and wait
 #
-RUN mkdir -p ${RUNTIME_HOME}
-RUN chown ${USER_NAME}:${USER_NAME} ${RUNTIME_HOME}
-
-#
-# Change to guest user
-#
-USER ${USER_NAME}
+echo "COMMAND FINISHED"
+sleep infinity

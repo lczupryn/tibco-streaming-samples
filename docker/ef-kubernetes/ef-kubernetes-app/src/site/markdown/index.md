@@ -7,19 +7,13 @@ This sample describes how to deploy an application archive containing an EventFl
 * [Containers and nodes](#containers-and-nodes)
 * [Building and running from TIBCO StreamBase Studio&trade;](#building-and-running-from-tibco-streambase-studio-trade)
 * [Building this sample from the command line and running the integration test cases](#building-this-sample-from-the-command-line-and-running-the-integration-test-cases)
-* [Example kubernetes commands](#example-kubernetes-commands)
-
-
-**FIX THIS - TODO -**
-
-* add cluster monitor ?
-* show web admin ?
+* [Further kubernetes commands](#further-kubernetes-commands)
 
 <a name="prerequisites"></a>
 
 ## Prerequisites
 
-In addition to docker (see main docker sample **FIX THIS - ADD LINK**), Kubernetes is also required to be
+In addition to docker (see [main docker sample](../../../../../ef-2node/ef-2node-app/src/site/markdown/index.md) ), Kubernetes is also required to be
 installed and configured.
 
 When using docker desktop, this can most easily be archived by enabling Kubernetes :
@@ -39,9 +33,10 @@ the necessary Kubernetes configurations for deployment.
 
 The Kubernetes configurations include -
 
-* [stateful.yaml](../../../src/main/kubernetes/stateful.yaml) - Kubernetes Service and StatefulSet definition for a scaling cluster
+* [ef-kubernetes-app.yaml](../../../src/main/kubernetes/ef-kubernetes-app.yaml) - Kubernetes Service and StatefulSet definition for a scaling cluster
 * [security.conf](../../../src/main/configurations/security.conf) - Trusted hosts names need to match Kubernetes DNS names
 * [start-node](../../../src/main/docker/base/start-node) - Script updated to set a default NODENAME if not set and to set node username and password
+* [start-cluster-monitor](../../../src/main/docker/clustermonitor/start-cluster-monitor) - Script to start the cluster monitor
 
 **FIX THIS - current version of Kitematic doesn't display container logs.  I've been using the older 0.17.6 from https://github.com/docker/kitematic/releases/download/v0.17.6/Kitematic-0.17.6-Mac.zip **
 
@@ -51,7 +46,7 @@ The Kubernetes configurations include -
 
 **FIX THIS - describe statefulstate ( this gives us sensible DNS/hostname, templates and scaling )**
 
-**FIX THIS - add some diagrams showing the Kubernetes deployment**
+![resources](images/kubernetes-docker.svg)
 
 <a name="building-and-running-from-tibco-streambase-studio-trade"></a>
 
@@ -69,7 +64,9 @@ Running *mvn install* will :
 * Run eventflow fragment unit test cases
 * Build the application archive that contains the eventflow fragment
 * If docker is installed -
-    * Build docker image containing the application archive
+    * Build a base image containing just the product
+    * Build a application docker image containing the application archive
+    * Build a cluster monitor docker image
     * Run basic system test case in docker
 * If docker is not installed -
     * Run basic system test cases natively
@@ -79,7 +76,7 @@ Running *mvn install* will :
 To start the cluster use the *kubectl apply* command :
 
 ```
-$ kubectl apply -f ef-kubernetes-app/src/main/kubernetes/stateful.yaml
+$ kubectl apply -f ef-kubernetes-app/src/main/kubernetes/ef-kubernetes-app.yaml 
 service/ef-kubernetes-app created
 statefulset.apps/ef-kubernetes-app created
 ```
@@ -189,9 +186,11 @@ $ kubectl exec ef-kubernetes-app-0 epadmin servicename=ef-kubernetes-app-0.ef-ku
 [ef-kubernetes-app-0.ef-kubernetes-app] Location Code = 11990177587896688850
 ```
 
-<a name="example-kubernetes-commands"></a>
+<a name="further-kubernetes-commands"></a>
 
-## Example kubernetes commands
+## Further kubernetes commands
+
+### Scaling the application
 
 To scale up the cluster we can increase the number of replicas with the *kubectl scale* command :
 
@@ -240,6 +239,8 @@ $ kubectl scale statefulsets ef-kubernetes-app --replicas=3
 statefulset.apps/ef-kubernetes-app scaled
 ```
 
+### Status
+
 To check POD status use the *kubectl get* command :
 
 ```
@@ -249,6 +250,8 @@ ef-kubernetes-app-0   1/1     Running   0          46m
 ef-kubernetes-app-1   1/1     Running   0          45m
 ef-kubernetes-app-2   1/1     Running   0          45m
 ```
+
+### Healthcheck
 
 Should a pod fail, the healthcheck should cause a re-start :
 
@@ -260,7 +263,17 @@ ef-kubernetes-app-1   1/1     Running   0          54m
 ef-kubernetes-app-2   1/1     Running   1          53m
 ```
 
-To delete the service and statefulset, use the *kubectl delete* command :
+### Delete
+
+To delete everything defined in the yaml file, use the *kubectl delete* command :
+
+```
+$ kubectl delete -f ef-kubernetes-app/src/main/kubernetes/ef-kubernetes-app.yaml 
+service "ef-kubernetes-app" deleted
+statefulset.apps "ef-kubernetes-app" deleted
+```
+
+Individual services and statefulsets can also be deleted :
 
 ```
 $ kubectl delete service ef-kubernetes-app
@@ -269,6 +282,47 @@ service "ef-kubernetes-app" deleted
 $ kubectl delete statefulset ef-kubernetes-app
 statefulset.apps "ef-kubernetes-app" deleted
 ```
+
+### Cluster monitor
+
+To start the cluster monitor user the *kubectl apply* command to apply clustermonitor.yaml :
+
+```
+$ kubectl apply -f ef-kubernetes-app/src/main/kubernetes/clustermonitor.yaml 
+service/clustermonitor created
+statefulset.apps/clustermonitor created
+```
+
+This configuration uses *NodePort* to expose the web server externally.  Use the *kubectl describe service*
+command to determine the mapped port :
+
+```
+$ kubectl describe service clustermonitor
+Name:                     clustermonitor
+Namespace:                default
+Labels:                   app=clustermonitor
+Annotations:              kubectl.kubernetes.io/last-applied-configuration:
+                            {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"labels":{"app":"clustermonitor"},"name":"clustermonitor","namespace":"de...
+Selector:                 app=clustermonitor
+Type:                     NodePort
+IP:                       10.105.204.60
+LoadBalancer Ingress:     localhost
+Port:                     http  11080/TCP
+TargetPort:               11080/TCP
+NodePort:                 http  31044/TCP
+Endpoints:                10.1.0.15:11080
+Session Affinity:         None
+External Traffic Policy:  Cluster
+Events:                   <none>
+```
+
+In this case the URL http://localhost:31044 can be used to access the cluster monitor :
+
+![resources](images/clustermonitor.png)
+
+
+
+### Web UI Dashboard
 
 To start the Kubernetes web-ui-dashboard see https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard :
 

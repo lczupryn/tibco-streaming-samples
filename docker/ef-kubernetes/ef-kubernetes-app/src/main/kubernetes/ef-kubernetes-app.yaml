@@ -29,16 +29,6 @@ spec:
         - name: ef-kubernetes-app
           image: docker/ef-kubernetes-app:1.0.0
           imagePullPolicy: Never
-          #readinessProbe:
-          #  tcpSocket:
-          #    port: 8008
-          #  initialDelaySeconds: 30
-          #  periodSeconds: 10
-          #livenessProbe:
-          #  tcpSocket:
-          #    port: 8008
-          #  initialDelaySeconds: 15
-          #  periodSeconds: 20
           readinessProbe:
             httpGet:
               path: /healthcheck/v1/status
