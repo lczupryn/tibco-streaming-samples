@@ -13,7 +13,7 @@ This sample describes how to deploy an application archive containing an EventFl
 
 * Consider volumes for storage ( application archive / node deployment configuration / substitution files etc )
 * Helm
-* Comment configuration files
+* System test kubernetes
 * Try on multi-node servers - discovery issues ?
 
 <a name="prerequisites"></a>
@@ -39,7 +39,6 @@ I'm thinking something like -
 * New tickbox to enable Kubernetes ( depends on docker above )
 * New tickbox to generate cluster monitor image ( depends on docker above ) - or maybe this stays as a sample ?
 * New selector for different types of storage external to image, such as Kubernetes volumes
-
 
 **FIX THIS - show animated gif of creating new project**
 
@@ -67,7 +66,12 @@ The Kubernetes configurations include -
 
 ## Building and running from TIBCO StreamBase Studio&trade;
 
-**FIX THIS - look for useful Studio plugins**
+Useful plugins include :
+
+* [Kubernetes Manifest Editor](https://marketplace.eclipse.org/content/kubernetes-manifest-editor)
+* [EKube](https://marketplace.eclipse.org/content/ekube)
+
+![resources](images/eclipse.png)
 
 <a name="building-this-sample-from-the-command-line-and-running-the-integration-test-cases"></a>
 
