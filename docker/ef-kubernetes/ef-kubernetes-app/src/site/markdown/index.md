@@ -9,6 +9,13 @@ This sample describes how to deploy an application archive containing an EventFl
 * [Building this sample from the command line and running the integration test cases](#building-this-sample-from-the-command-line-and-running-the-integration-test-cases)
 * [Further kubernetes commands](#further-kubernetes-commands)
 
+**FIX THIS - TO-DO :**
+
+* Consider volumes for storage ( application archive / node deployment configuration / substitution files etc )
+* Helm
+* Comment configuration files
+* Try on multi-node servers - discovery issues ?
+
 <a name="prerequisites"></a>
 
 ## Prerequisites
@@ -25,6 +32,14 @@ When using docker desktop, this can most easily be archived by enabling Kubernet
 ## Creating an application archive project for Kubernetes from TIBCO StreamBase Studio&trade;
 
 Create a new StreamBase Project and enable both Docker and Kubernetes :
+
+I'm thinking something like -
+
+* Existing tickbox for docker
+* New tickbox to enable Kubernetes ( depends on docker above )
+* New tickbox to generate cluster monitor image ( depends on docker above ) - or maybe this stays as a sample ?
+* New selector for different types of storage external to image, such as Kubernetes volumes
+
 
 **FIX THIS - show animated gif of creating new project**
 

@@ -110,6 +110,8 @@
 
     <build>
         <plugins>
+        
+            <!-- native tests if docker not installed -->
             <plugin>
                 <groupId>com.tibco.ep</groupId>
                 <artifactId>ep-maven-plugin</artifactId>
@@ -122,9 +124,16 @@
                      </nodes>
                  </configuration>
             </plugin>
+            
             <plugin>
                 <groupId>io.fabric8</groupId>
                 <artifactId>docker-maven-plugin</artifactId>
+                
+                <!-- SBRT base docker image built via parent pom -->
+                
+                <!-- application docker image built via parent pom -->
+                
+                <!-- Build cluster monitor docker image -->
                 <executions>
                     <execution>
                         <id>cluster monitor image</id>
@@ -158,6 +167,8 @@
                             </images>
                         </configuration>
                     </execution>
+
+                    <!-- docker tests if docker installed -->
                     <execution>
                         <id>start nodes</id>
                         <phase>pre-integration-test</phase>
@@ -232,6 +243,7 @@
                             <skip>${skipDockerTests}</skip>
                         </configuration>
                     </execution>
+                    
                 </executions>
             </plugin>
         </plugins>
