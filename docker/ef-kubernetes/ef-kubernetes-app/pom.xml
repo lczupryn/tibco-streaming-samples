@@ -54,6 +54,7 @@
         <skipApplicationDocker>true</skipApplicationDocker>
         <skipStreamBaseDockerBase>true</skipStreamBaseDockerBase>
         <skipDockerTests>true</skipDockerTests>
+        <skipKubernetesTests>true</skipKubernetesTests>
     </properties>
     
     <dependencies>
@@ -106,6 +107,19 @@
                 <skipDockerTests>${skipTests}</skipDockerTests>
             </properties>
         </profile>
+
+        <!-- if kubernetes is available, run kubernetes integration test -->
+        <profile>
+            <id>Kubectl in local</id>
+            <activation>
+                <file>
+                    <exists>/usr/local/bin/kubectl</exists>
+                </file>
+            </activation>
+            <properties>
+                <skipKubernetesTests>${skipTests}</skipKubernetesTests>
+            </properties>
+        </profile>
     </profiles>
 
     <build>
@@ -125,13 +139,19 @@
                  </configuration>
             </plugin>
             
+            <!-- SBRT base docker image built via parent pom -->
+            <!-- application docker image built via parent pom -->
             <plugin>
                 <groupId>io.fabric8</groupId>
                 <artifactId>docker-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- note different maven plugin so we can try and test kubernetes -->
+            <plugin>
+                <groupId>io.fabric8</groupId>
+                <artifactId>fabric8-maven-plugin</artifactId>
+                <version>4.3.0</version>
                 
-                <!-- SBRT base docker image built via parent pom -->
-                
-                <!-- application docker image built via parent pom -->
                 
                 <!-- Build cluster monitor docker image -->
                 <executions>
@@ -142,8 +162,6 @@
                             <goal>build</goal>
                         </goals>
                         <configuration>
-                            <logDate>default</logDate>
-                            <verbose>true</verbose>
                             <skip>${skipApplicationDocker}</skip>
                             <images>
                                 <image>
@@ -168,84 +186,57 @@
                         </configuration>
                     </execution>
 
-                    <!-- docker tests if docker installed -->
+                    <!-- start and stop to support integration tests -->
+                    <!-- some other plugin on goal integration-test can validate the application -->
+                    <!-- helm should be more interesting since we can use variables to set test ports etc -->
                     <execution>
-                        <id>start nodes</id>
+                        <id>deploy cluster monitor</id>
                         <phase>pre-integration-test</phase>
                         <goals>
-                            <goal>start</goal>
+                            <goal>deploy</goal>
                         </goals>
                         <configuration>
-                            <startParallel>true</startParallel>
-                            <skip>${skipDockerTests}</skip>
-                            <autoCreateCustomNetworks>true</autoCreateCustomNetworks>
-                            <images>
-                                <image>
-                                    <name>%g/%a:%l</name>
-                                    <alias>A.${project.artifactId}</alias>
-                                    <run>
-                                        <network>
-                                            <name>${dockerDomain}</name>
-                                            <alias>A.${dockerDomain}</alias>
-                                        </network>
-                                        <hostname>A.${dockerDomain}</hostname>
-                                        <env>
-                                            <NODENAME>A.${project.artifactId}</NODENAME>
-                                        </env>
-                                        <log>
-                                            <enabled>true</enabled>
-                                        </log>
-                                        <wait>
-                                            <log>COMMAND FINISHED</log>
-                                            <time>100000</time>
-                                            <exec>
-                                                <postStart>epadmin servicename=A.${project.artifactId} display cluster</postStart>
-                                            </exec>
-                                        </wait>
-                                        <namingStrategy>alias</namingStrategy>
-                                    </run>
-                                </image>
-                                <image>
-                                    <name>%g/%a:%l</name>
-                                    <alias>B.${project.artifactId}</alias>
-                                    <run>
-                                        <network>
-                                            <name>${dockerDomain}</name>
-                                            <alias>B.${dockerDomain}</alias>
-                                        </network>
-                                        <hostname>B.${dockerDomain}</hostname>
-                                        <env>
-                                            <NODENAME>B.${project.artifactId}</NODENAME>
-                                        </env>
-                                        <log>
-                                            <enabled>true</enabled>
-                                        </log>
-                                        <wait>
-                                            <log>COMMAND FINISHED</log>
-                                            <time>100000</time>
-                                            <exec>
-                                                <postStart>epadmin servicename=B.${project.artifactId} display cluster</postStart>
-                                            </exec>
-                                        </wait>
-                                        <namingStrategy>alias</namingStrategy>
-                                    </run>
-                                </image>
-                            </images>
+                            <skip>${skipKubernetesTests}</skip>
+                            <kubernetesManifest>${project.basedir}/src/main/kubernetes/clustermonitor.yaml</kubernetesManifest>
                         </configuration>
                     </execution>
                     <execution>
-                        <id>stop nodes</id>
-                        <phase>post-integration-test</phase>
+                        <id>deploy application</id>
+                        <phase>pre-integration-test</phase>
                         <goals>
-                            <goal>stop</goal>
+                            <goal>deploy</goal>
                         </goals>
                         <configuration>
-                            <skip>${skipDockerTests}</skip>
+                            <skip>${skipKubernetesTests}</skip>
+                            <kubernetesManifest>${project.basedir}/src/main/kubernetes/ef-kubernetes-app.yaml</kubernetesManifest>
                         </configuration>
                     </execution>
-                    
+                    <execution>
+                        <id>undeploy cluster monitor</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>undeploy</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipKubernetesTests}</skip>
+                            <kubernetesManifest>${project.basedir}/src/main/kubernetes/clustermonitor.yaml</kubernetesManifest>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>undeploy application</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>undeploy</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipKubernetesTests}</skip>
+                            <kubernetesManifest>${project.basedir}/src/main/kubernetes/ef-kubernetes-app.yaml</kubernetesManifest>
+                        </configuration>
+                    </execution>
                 </executions>
+
             </plugin>
+
         </plugins>
     </build>
 

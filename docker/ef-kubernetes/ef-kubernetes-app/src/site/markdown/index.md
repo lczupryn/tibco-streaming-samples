@@ -1,6 +1,8 @@
 # Docker : Kubernetes EventFlow
 
-This sample describes how to deploy an application archive containing an EventFlow fragment to Docker using Kubernetes.
+This sample describes how to deploy an application archive containing an EventFlow fragment to Docker using 
+Kubernetes.  The primary focus is desktop development, ie testing of application images in a desktop Kubernetes 
+node.
 
 * [Prerequisites](#prerequisites)
 * [Creating an application archive project for Kubernetes from TIBCO StreamBase Studio&trade;](#creating-an-application-archive-project-for-kubernetes-from-tibco-streambase-studio-trade)
@@ -12,8 +14,7 @@ This sample describes how to deploy an application archive containing an EventFl
 **FIX THIS - TO-DO :**
 
 * Consider volumes for storage ( application archive / node deployment configuration / substitution files etc )
-* Helm
-* System test kubernetes
+* Helm - better options to configure port numbers etc for testing
 * Try on multi-node servers - discovery issues ?
 
 <a name="prerequisites"></a>
@@ -21,11 +22,44 @@ This sample describes how to deploy an application archive containing an EventFl
 ## Prerequisites
 
 In addition to docker (see [main docker sample](../../../../../ef-2node/ef-2node-app/src/site/markdown/index.md) ), Kubernetes is also required to be
-installed and configured.
+installed and configured.  There are several options.
 
-When using docker desktop, this can most easily be archived by enabling Kubernetes :
+### Docker for desktop
+
+When using docker desktop, this can most easily be achieved by enabling Kubernetes :
 
 ![resources](images/enable.png)
+
+Validate that *docker-for-desktop* is the current context :
+
+```
+$ kubectl config current-context
+docker-for-desktop
+```
+
+Docker for desktop only supports a single node.
+
+### Minikube
+
+An alternative is *minikube* - see https://kubernetes.io/docs/setup/learning-environment/minikube/ 
+for installation instructions.  Validate that *minikube* is the current context :
+
+```
+$ kubectl config current-context
+minikube
+```
+
+Minikube only supports a single node.
+
+### Kind
+
+An alternative is *kind* - see https://kind.sigs.k8s.io/docs/user/quick-start/ for installation instructions. 
+Since this is a docker-in-docker approach, its usage is different.
+
+**FIX THS - need to add more details**
+
+Kind supports a multiple nodes.
+
 
 <a name="creating-an-application-archive-project-for-kubernetes-from-tibco-streambase-studio-trade"></a>
 
@@ -48,6 +82,7 @@ the necessary Kubernetes configurations for deployment.
 The Kubernetes configurations include -
 
 * [ef-kubernetes-app.yaml](../../../src/main/kubernetes/ef-kubernetes-app.yaml) - Kubernetes Service and StatefulSet definition for a scaling cluster
+* [clustermonitor.yaml](../../../src/main/kubernetes/clustermonitor.yaml) - Kubernetes Service and StatefulSet definition for cluster monitor
 * [security.conf](../../../src/main/configurations/security.conf) - Trusted hosts names need to match Kubernetes DNS names
 * [start-node](../../../src/main/docker/base/start-node) - Script updated to set a default NODENAME if not set and to set node username and password
 * [start-cluster-monitor](../../../src/main/docker/clustermonitor/start-cluster-monitor) - Script to start the cluster monitor
@@ -71,7 +106,7 @@ Useful plugins include :
 * [Kubernetes Manifest Editor](https://marketplace.eclipse.org/content/kubernetes-manifest-editor)
 * [EKube](https://marketplace.eclipse.org/content/ekube)
 
-![resources](images/eclipse.png)
+![resources](images/studio.png)
 
 <a name="building-this-sample-from-the-command-line-and-running-the-integration-test-cases"></a>
 
@@ -86,7 +121,7 @@ Running *mvn install* will :
     * Build a base image containing just the product
     * Build a application docker image containing the application archive
     * Build a cluster monitor docker image
-    * Run basic system test case in docker
+    * Run basic system test to validate configuration
 * If docker is not installed -
     * Run basic system test cases natively
 
@@ -343,7 +378,9 @@ In this case the URL http://localhost:31044 can be used to access the cluster mo
 
 ### Web UI Dashboard
 
-To start the Kubernetes web-ui-dashboard see https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard :
+### Docker for desktop
+
+To start the Kubernetes dashboard in a *docker-for-desktop* context see https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard :
 
 ```
 $ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml
@@ -388,8 +425,20 @@ namespace:  20 bytes
 $ kubectl proxy
 ```
 
-The web-ui-dashboard can be found at http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+The dashboard can be found at http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
 with token credentials as exported above :
 
 ![resources](images/web-ui.png)
 
+### Minikube
+
+Starting the dashboard in a *minikube* context is via the *minikube dashboard* command :
+
+```
+$ minikube dashboard
+🔌  Enabling dashboard ...
+🤔  Verifying dashboard health ...
+🚀  Launching proxy ...
+🤔  Verifying proxy health ...
+🎉  Opening http://127.0.0.1:57841/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/ in your default browser...
+```
