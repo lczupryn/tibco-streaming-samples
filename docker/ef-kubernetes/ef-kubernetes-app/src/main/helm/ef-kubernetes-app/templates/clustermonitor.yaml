@@ -1,0 +1,69 @@
+#
+# Service for the cluster monitor
+#
+apiVersion: v1
+kind: Service
+metadata:
+  name: clustermonitor
+  labels:
+    app: clustermonitor
+spec:
+  selector:
+    app: clustermonitor
+  #
+  # expose the container port external to the
+  # kubernetes node
+  #
+  type: NodePort
+  ports:
+  - port: 11080
+    targetPort: 11080
+    protocol: TCP
+    name: http
+    nodePort: {{ .Values.nodePort }}
+---
+
+#
+# clustermonitor as a stateful set
+#
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: clustermonitor
+spec:
+  selector:
+    matchLabels:
+      app: clustermonitor
+  serviceName: "clustermonitor"
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: clustermonitor
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: clustermonitor
+          #
+          # docker image to use
+          #
+          image: {{ .Values.dockerRegistry }}docker/clustermonitor:1.0.0
+          #
+          # expose the cluster monitor web port
+          #
+          ports:
+            - containerPort: 11080
+      #
+      # the default DNS policy doesn't allow for full name
+      # resolution by hostname, so we create our own and
+      # specify the search domain name
+      #
+      dnsPolicy: "None"
+      dnsConfig:
+        nameservers:
+          - 10.96.0.10
+        searches:
+          - clustermonitor.default.svc.cluster.local
+        options:
+          - name: ndots
+            value: "5"

@@ -1,0 +1,14 @@
+#
+# Docker registry used to fetch docker images
+#
+dockerRegistry: na-bos-artifacts.na.tibco.com:2001/
+
+#
+# Number of replicas in the application cluster
+#
+replicaCount: 3
+
+#
+# Exposed node port
+#
+nodePort: 31000

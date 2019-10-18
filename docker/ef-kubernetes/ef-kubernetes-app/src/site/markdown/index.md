@@ -9,24 +9,27 @@ node.
 * [Containers and nodes](#containers-and-nodes)
 * [Building and running from TIBCO StreamBase Studio&trade;](#building-and-running-from-tibco-streambase-studio-trade)
 * [Building this sample from the command line and running the integration test cases](#building-this-sample-from-the-command-line-and-running-the-integration-test-cases)
-* [Further kubernetes commands](#further-kubernetes-commands)
+* [Packaging with Helm](#packaging-with-helm)
+* [Deployment](#deployment)
+* [Further Kubernetes commands](#further-kubernetes-commands)
 
-**FIX THIS - TO-DO :**
+**FIX THIS:** - TO-DO :
 
 * Consider volumes for storage ( application archive / node deployment configuration / substitution files etc )
-* Helm - better options to configure port numbers etc for testing
-* Try on multi-node servers - discovery issues ?
+* Test with multi-node servers, eg Kind
+* Add further sample for OpenShift
+* Add further sample(s) for production deployment ( eg AWS, Google etc )
 
 <a name="prerequisites"></a>
 
 ## Prerequisites
 
-In addition to docker (see [main docker sample](../../../../../ef-2node/ef-2node-app/src/site/markdown/index.md) ), Kubernetes is also required to be
-installed and configured.  There are several options.
+In addition to Docker (see [main Docker sample](../../../../../ef-2node/ef-2node-app/src/site/markdown/index.md) ), 
+Kubernetes is also required to be installed and configured.  There are several options.
 
 ### Docker for desktop
 
-When using docker desktop, this can most easily be achieved by enabling Kubernetes :
+When using Docker desktop, this can most easily be achieved by enabling Kubernetes :
 
 ![resources](images/enable.png)
 
@@ -54,12 +57,11 @@ Minikube only supports a single node.
 ### Kind
 
 An alternative is *kind* - see https://kind.sigs.k8s.io/docs/user/quick-start/ for installation instructions. 
-Since this is a docker-in-docker approach, its usage is different.
+Since this is a Docker-in-Docker approach, its usage is different.
 
-**FIX THS - need to add more details**
+**FIX THIS:** - need to add more details
 
 Kind supports a multiple nodes.
-
 
 <a name="creating-an-application-archive-project-for-kubernetes-from-tibco-streambase-studio-trade"></a>
 
@@ -67,16 +69,21 @@ Kind supports a multiple nodes.
 
 Create a new StreamBase Project and enable both Docker and Kubernetes :
 
-I'm thinking something like -
+**FIX THIS:** We need to update studio menu to something like :
 
-* Existing tickbox for docker
-* New tickbox to enable Kubernetes ( depends on docker above )
-* New tickbox to generate cluster monitor image ( depends on docker above ) - or maybe this stays as a sample ?
-* New selector for different types of storage external to image, such as Kubernetes volumes
+* Existing tickbox for **Docker**
+  * If **Docker** tickbox selected, show new radio button for container orchestration framework.  Options are **None**, **Kubernetes** and **OpenShift**
+    * **None** - Docker only files generated
+    * **Kubernetes** - Kubernetes yaml file generated in src/main/kubernetes, security.conf updated for the default Kubernetes network name
+    * **OpenShift** - OpenShift yaml file generated in src/main/openshift, security.conf updated for the default OpenShift network name
+  * If **Docker** tickbox selected, new tickbox to generate clustemonitor image - or maybe this stays as a sample ?
+  * If **Kubernetes** or **OpenShift** is selected, new radio button for packaging type.  Options are **None** and **Helm**
+    * **None** - no change
+    * **Helm** - Helm Chart yaml file generated in src/main/helm and Kubernetes/OpenShift files are generated in the Helm structure instead.  Rule added to pom.xml to generate and deploy helm package.
 
-**FIX THIS - show animated gif of creating new project**
+**FIX THIS:** - show animated gif of creating new project in studio
 
-The resulting project contains maven rules for building a docker image containing the application and 
+The resulting project contains maven rules for building a Docker image containing the application and 
 the necessary Kubernetes configurations for deployment.
 
 The Kubernetes configurations include -
@@ -86,14 +93,18 @@ The Kubernetes configurations include -
 * [security.conf](../../../src/main/configurations/security.conf) - Trusted hosts names need to match Kubernetes DNS names
 * [start-node](../../../src/main/docker/base/start-node) - Script updated to set a default NODENAME if not set and to set node username and password
 * [start-cluster-monitor](../../../src/main/docker/clustermonitor/start-cluster-monitor) - Script to start the cluster monitor
+* [Chart.yaml](../../../src/main/helm/ef-kubernetes-app/Chart.yaml) - Basic Helm Chart
+* [values.yaml](../../../src/main/helm/ef-kubernetes-app/values.yaml) - Helm variables
 
-**FIX THIS - current version of Kitematic doesn't display container logs.  I've been using the older 0.17.6 from https://github.com/docker/kitematic/releases/download/v0.17.6/Kitematic-0.17.6-Mac.zip **
+**FIX THIS:** - current version of Kitematic doesn't display container logs.  I've been using the older 0.17.6 from https://github.com/docker/kitematic/releases/download/v0.17.6/Kitematic-0.17.6-Mac.zip
 
 <a name="containers-and-nodes"></a>
 
 ## Containers and nodes
 
-**FIX THIS - describe statefulstate ( this gives us sensible DNS/hostname, templates and scaling )**
+**FIX THIS:** - describe statefulstate ( this gives us sensible DNS/hostname, templates and scaling )
+
+The goal of this sample is to construct a deployment shown below :
 
 ![resources](images/kubernetes-docker.svg)
 
@@ -117,15 +128,20 @@ Running *mvn install* will :
 * Build the eventflow fragment
 * Run eventflow fragment unit test cases
 * Build the application archive that contains the eventflow fragment
-* If docker is installed -
+* If Docker is installed :
     * Build a base image containing just the product
-    * Build a application docker image containing the application archive
-    * Build a cluster monitor docker image
+    * Build a application Docker image containing the application archive
+    * Build a cluster monitor Docker image
     * Run basic system test to validate configuration
-* If docker is not installed -
+* If Docker is not installed -
     * Run basic system test cases natively
+* If Kubernetes was selected and is installed :
+    * Cluster started under Kubernets, option for user to add system test cases, cluster stopped
+* If Helm was selected :
+    * Helm downloaded locally if not found
+    * Helm package built
 
-**FIX THIS - add animated gif**
+**FIX THIS:** - add animated gif
 
 To start the cluster use the *kubectl apply* command :
 
@@ -240,9 +256,167 @@ $ kubectl exec ef-kubernetes-app-0 epadmin servicename=ef-kubernetes-app-0.ef-ku
 [ef-kubernetes-app-0.ef-kubernetes-app] Location Code = 11990177587896688850
 ```
 
+<a name="packaging-with-helm"></a>
+
+## Packaging with Helm
+
+When Helm is enabled, a Helm chart is created so that the application can be packaged, deployed to a repository and 
+installed into Kubernetes.
+
+```
+$ mvn install
+...
+[INFO] --- helm-maven-plugin:4.12:package (create helm package) @ ef-kubernetes-app ---
+[INFO] Packaging chart /Users/plord/workspace/tibco-streaming-samples-plord/docker/ef-kubernetes/ef-kubernetes-app/src/main/helm/ef-kubernetes-app...
+[INFO] Setting chart version to 1.0.0
+[INFO] Successfully packaged chart and saved it to: /Users/plord/workspace/tibco-streaming-samples-plord/docker/ef-kubernetes/ef-kubernetes-app/target/helm/repo/ef-kubernetes-app-1.0.0.tgz
+```
+
+If not already installed, Helm is downloaded and installed into the maven target directory.
+
+Prior to installing the Helm chart, Helm Tiller must be started in Kubernetes using the *helm init* command :
+
+```
+$ helm init
+$HELM_HOME has been configured at /Users/plord/.helm.
+
+Tiller (the Helm server-side component) has been installed into your Kubernetes Cluster.
+
+Please note: by default, Tiller is deployed with an insecure 'allow unauthenticated users' policy.
+To prevent this, run `helm init` with the --tiller-tls-verify flag.
+For more information on securing your installation see: https://docs.helm.sh/using_helm/#securing-your-helm-installation
+```
+
+The Helm chart can be installed with the *helm install* command - this will start the application up in Kubernetes :
+
+```
+$ helm install target/helm/repo/ef-kubernetes-app-1.0.0.tgz
+NAME:   wandering-leopard
+LAST DEPLOYED: Fri Oct 18 09:55:51 2019
+NAMESPACE: default
+STATUS: DEPLOYED
+
+RESOURCES:
+==> v1/Pod(related)
+NAME                 READY  STATUS             RESTARTS  AGE
+clustermonitor-0     0/1    ContainerCreating  0         0s
+ef-kubernetes-app-0  0/1    ContainerCreating  0         0s
+
+==> v1/Service
+NAME               TYPE       CLUSTER-IP    EXTERNAL-IP  PORT(S)          AGE
+clustermonitor     NodePort   10.97.171.21  <none>       11080:31000/TCP  0s
+ef-kubernetes-app  ClusterIP  None          <none>       <none>           0s
+
+==> v1/StatefulSet
+NAME               READY  AGE
+clustermonitor     0/1    0s
+ef-kubernetes-app  0/3    0s
+```
+
+```
+$ kubectl get pod
+NAME                  READY   STATUS    RESTARTS   AGE
+clustermonitor-0      1/1     Running   0          5m39s
+ef-kubernetes-app-0   1/1     Running   0          5m39s
+ef-kubernetes-app-1   1/1     Running   0          4m44s
+ef-kubernetes-app-2   1/1     Running   0          3m53s
+```
+
+Values can be set via the *--set* argument :
+
+```
+$ helm install --set replicaCount=2 target/helm/repo/ef-kubernetes-app-1.0.0.tgz
+```
+
+The *helm delete* command will stop the application and delete the chart :
+
+```
+$ helm list
+NAME                REVISION    UPDATED                     STATUS      CHART                   APP VERSION NAMESPACE
+wandering-leopard   1           Fri Oct 18 09:55:51 2019    DEPLOYED    ef-kubernetes-app-1.0.0             default  
+$ helm delete wandering-leopard
+release "wandering-leopard" deleted
+```
+
+<a name="deployment"></a>
+
+## Deployment
+
+The Docker image(s) and Helm package can be deployed to a repository using the *mvn deploy* command :
+
+```
+$ mvn deploy
+...
+[INFO] --- fabric8-maven-plugin:4.3.0:push (push docker images) @ ef-kubernetes-app ---
+[INFO] F8> The push refers to repository [na-bos-artifacts.na.tibco.com:2001/sbrt-base]
+60f3734b586c: Pushed 
+[INFO] F8> 10.6.0-SNAPSHOT: digest: sha256:16798d2f983e37cd5b0a841bf0c5d542e3fa05c01591223f83e5d5db1b33021d size: 1991
+[INFO] F8> Pushed sbrt-base:10.6.0-SNAPSHOT in 3 seconds 
+[INFO] F8> The push refers to repository [na-bos-artifacts.na.tibco.com:2001/docker/ef-kubernetes-app]
+5e7f255d6555: Pushed      
+[INFO] F8> 1.0.0: digest: sha256:2758e14a927e68f250edfeaa42ff172411fb07cea8c730c2ade0a3eb6cc80baa size: 2200
+[INFO] F8> Pushed docker/ef-kubernetes-app:1.0.0 in 7 seconds 
+[INFO] F8> The push refers to repository [na-bos-artifacts.na.tibco.com:2001/docker/clustermonitor]
+31724a993ac6: Pushed      
+[INFO] F8> 1.0.0: digest: sha256:0ba19caf684313357d8aa164e71aed1e21faa023c15cf86a878423676ecca632 size: 2407
+[INFO] F8> Pushed docker/clustermonitor:1.0.0 in 20 seconds 
+[INFO] 
+[INFO] --- helm-maven-plugin:4.12:upload (deploy helm package) @ ef-kubernetes-app ---
+[INFO] Uploading to http://na-bos-artifacts.na.tibco.com/artifactory/helm/
+
+[INFO] Uploading /Users/plord/workspace/tibco-streaming-samples-plord/docker/ef-kubernetes/ef-kubernetes-app/target/helm/repo/ef-kubernetes-app-1.0.0.tgz...
+[INFO] 201 - {
+  "repo" : "helm",
+  "path" : "/ef-kubernetes-app-1.0.0.tgz",
+  "created" : "2019-10-17T11:27:05.381-04:00",
+  "createdBy" : "deployment",
+  "downloadUri" : "http://na-bos-artifacts.na.tibco.com:8081/artifactory/helm/ef-kubernetes-app-1.0.0.tgz",
+  "mimeType" : "application/x-gzip",
+  "size" : "1227",
+  "checksums" : {
+    "sha1" : "b8c3c684ece2ce63df74fa9f66049aade92787b1",
+    "md5" : "068f708d94747c5c47e866ab85bde8d9"
+  },
+  "originalChecksums" : {
+  },
+  "uri" : "http://na-bos-artifacts.na.tibco.com:8081/artifactory/helm/ef-kubernetes-app-1.0.0.tgz"
+}
+```
+
+Once deployed, the application can be installed on any Kubernetes node :
+
+```
+$ helm install http://na-bos-artifacts.na.tibco.com:8081/artifactory/helm/ef-kubernetes-app-1.0.0.tgz
+NAME:   amber-newt
+LAST DEPLOYED: Fri Oct 18 10:10:00 2019
+NAMESPACE: default
+STATUS: DEPLOYED
+
+RESOURCES:
+==> v1/Pod(related)
+NAME                 READY  STATUS             RESTARTS  AGE
+clustermonitor-0     0/1    ContainerCreating  0         0s
+ef-kubernetes-app-0  0/1    ContainerCreating  0         0s
+
+==> v1/Service
+NAME               TYPE       CLUSTER-IP     EXTERNAL-IP  PORT(S)          AGE
+clustermonitor     NodePort   10.103.56.142  <none>       11080:31000/TCP  0s
+ef-kubernetes-app  ClusterIP  None           <none>       <none>           0s
+
+==> v1/StatefulSet
+NAME               READY  AGE
+clustermonitor     0/1    0s
+ef-kubernetes-app  0/3    0s
+
+```
+
+Note that some Docker registry configurations may need to be treated as insecure :
+
+![resources](images/insecure-registry.png)
+
 <a name="further-kubernetes-commands"></a>
 
-## Further kubernetes commands
+## Further Kubernetes commands
 
 ### Scaling the application
 
@@ -373,8 +547,6 @@ Events:                   <none>
 In this case the URL http://localhost:31044 can be used to access the cluster monitor :
 
 ![resources](images/clustermonitor.png)
-
-
 
 ### Web UI Dashboard
 

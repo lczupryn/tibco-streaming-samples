@@ -55,6 +55,15 @@
         <skipStreamBaseDockerBase>true</skipStreamBaseDockerBase>
         <skipDockerTests>true</skipDockerTests>
         <skipKubernetesTests>true</skipKubernetesTests>
+
+        <!-- don't bother with the standard maven deploy -->
+        <maven.deploy.skip>true</maven.deploy.skip>
+
+        <!-- docker repository details - should be in settings.xml and managed in jenkins -->
+        <docker.push.registry>na-bos-artifacts.na.tibco.com:2001</docker.push.registry>
+        <docker.push.username>deployment</docker.push.username>
+        <docker.push.password>deployment</docker.push.password>
+
     </properties>
     
     <dependencies>
@@ -120,6 +129,40 @@
                 <skipKubernetesTests>${skipTests}</skipKubernetesTests>
             </properties>
         </profile>
+
+        <profile>
+            <id>helm linux</id>
+            <activation>
+                <os><name>linux</name></os>
+            </activation>
+            <properties>
+                <helm.downloadUrl>https://get.helm.sh/helm-v2.14.3-linux-amd64.tar.gz</helm.downloadUrl>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>helm macos</id>
+            <activation>
+                <os><name>mac os x</name></os>
+            </activation>
+            <properties>
+                <helm.downloadUrl>https://get.helm.sh/helm-v2.14.3-darwin-amd64.tar.gz</helm.downloadUrl>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>helm windows</id>
+            <activation>
+                <property>
+                    <name>path.separator</name>
+                    <value>;</value>
+                </property>
+            </activation>
+            <properties>
+                <helm.downloadUrl>https://get.helm.sh/helm-v2.14.3-windows-amd64.zip</helm.downloadUrl>
+            </properties>
+        </profile>
+
     </profiles>
 
     <build>
@@ -139,51 +182,124 @@
                  </configuration>
             </plugin>
             
-            <!-- SBRT base docker image built via parent pom -->
-            <!-- application docker image built via parent pom -->
-            <plugin>
-                <groupId>io.fabric8</groupId>
-                <artifactId>docker-maven-plugin</artifactId>
-            </plugin>
-
             <!-- note different maven plugin so we can try and test kubernetes -->
             <plugin>
                 <groupId>io.fabric8</groupId>
                 <artifactId>fabric8-maven-plugin</artifactId>
                 <version>4.3.0</version>
                 
-                
-                <!-- Build cluster monitor docker image -->
+                <configuration>
+                    <skip>${skipApplicationDocker}</skip>
+                    <images>
+
+                        <!-- SBRT base image -->
+                        <image>
+                            <name>sbrt-base:10.6.0-SNAPSHOT</name>
+                            <build>
+                                <dockerFileDir>${project.basedir}/src/main/docker/base</dockerFileDir>
+                                <assembly>
+                                    <inline>
+                                        <dependencySets>
+                                            <dependencySet>
+                                                <includes>
+                                                    <include>com.tibco.ep.sb.rt:platform_linuxx86_64:zip</include>
+                                                </includes>
+                                                <scope>${docker.scope}</scope>
+                                                <unpack>${platform_linux.unpack}</unpack>
+                                                <fileMode>755</fileMode>
+                                                <directoryMode>755</directoryMode>
+                                                <outputDirectory></outputDirectory>
+                                            </dependencySet>
+                                        </dependencySets>
+                                        <files>
+                                            <file>
+                                                <source>${project.basedir}/src/main/docker/base/start-node</source>
+                                                <outputDirectory></outputDirectory>
+                                                <lineEnding>unix</lineEnding>
+                                            </file>
+                                        </files>
+                                    </inline>
+                                </assembly>
+                            </build>
+                        </image>
+
+                        <!-- application image -->
+                        <image>
+                            <name>%g/%a:%l</name>
+                            <build>
+                                <dockerFileDir>${project.basedir}/src/main/docker/application</dockerFileDir>
+                                <assembly>
+                                    <inline>
+                                        <dependencySets>
+                                            <dependencySet>
+                                                <includes>
+                                                    <include>${project.groupId}:${project.artifactId}:ep-application:*</include>
+                                                </includes>
+                                                <unpack>false</unpack>
+                                                <outputDirectory>application</outputDirectory>
+                                            </dependencySet>
+                                        </dependencySets>
+                                        <fileSets>
+                                            <fileSet>
+                                                <directory>${project.basedir}/src/test/configurations</directory>
+                                                <outputDirectory>configuration</outputDirectory>
+                                            </fileSet>
+                                        </fileSets>
+                                    </inline>
+                                </assembly>
+                                <optimise>true</optimise>
+                            </build>
+                        </image>
+
+                        <!-- cluster monitor image -->
+                        <image>
+                            <name>%g/clustermonitor:%l</name>
+                            <build>
+                                <dockerFileDir>${project.basedir}/src/main/docker/clustermonitor</dockerFileDir>
+                                <optimise>true</optimise>
+                                <assembly>
+                                    <inline>
+                                        <files>
+                                            <file>
+                                                <source>${project.basedir}/src/main/docker/clustermonitor/start-cluster-monitor</source>
+                                                <outputDirectory></outputDirectory>
+                                                <lineEnding>unix</lineEnding>
+                                            </file>
+                                        </files>
+                                    </inline>
+                                </assembly>
+                            </build>
+                        </image>
+                    </images>
+
+                    <!-- push authentication - seems to be required -->
+                    <authConfig>
+                        <push>
+                            <username>${docker.push.username}</username>
+                            <password>${docker.push.password}</password>
+                        </push>
+                    </authConfig>
+
+                </configuration>
+
                 <executions>
+
+                    <!-- Build docker images -->
                     <execution>
-                        <id>cluster monitor image</id>
+                        <id>build docker images</id>
                         <phase>pre-integration-test</phase>
                         <goals>
                             <goal>build</goal>
                         </goals>
-                        <configuration>
-                            <skip>${skipApplicationDocker}</skip>
-                            <images>
-                                <image>
-                                    <name>%g/clustermonitor:%l</name>
-                                    <build>
-                                        <dockerFileDir>${project.basedir}/src/main/docker/clustermonitor</dockerFileDir>
-                                        <optimise>true</optimise>
-                                        <assembly>
-                                            <inline>
-                                                <files>
-                                                    <file>
-                                                        <source>${project.basedir}/src/main/docker/clustermonitor/start-cluster-monitor</source>
-                                                        <outputDirectory></outputDirectory>
-                                                        <lineEnding>unix</lineEnding>
-                                                    </file>
-                                                </files>
-                                            </inline>
-                                        </assembly>
-                                    </build>
-                                </image>
-                            </images>
-                        </configuration>
+                    </execution>
+
+                    <!-- deploy docker images -->
+                    <execution>
+                        <id>push docker images</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>push</goal>
+                        </goals>
                     </execution>
 
                     <!-- start and stop to support integration tests -->
@@ -233,8 +349,57 @@
                             <kubernetesManifest>${project.basedir}/src/main/kubernetes/ef-kubernetes-app.yaml</kubernetesManifest>
                         </configuration>
                     </execution>
+
                 </executions>
 
+            </plugin>
+
+            <!-- Generate helm Chart.yaml and create a helm package -->
+            <!-- note that this plugin can download and use helm for us -->
+            <plugin>
+                <groupId>com.kiwigrid</groupId>
+                <artifactId>helm-maven-plugin</artifactId>
+                <version>4.12</version>
+                <configuration>
+                    <chartDirectory>${project.basedir}/src/main/helm/ef-kubernetes-app</chartDirectory>
+                    <chartVersion>${project.version}</chartVersion>
+                    <uploadRepoStable>
+                        <name>UEP</name>
+                        <url>http://na-bos-artifacts.na.tibco.com/artifactory/helm/</url>
+                        <type>ARTIFACTORY</type>
+                    </uploadRepoStable>
+                    <autoDetectLocalHelmBinary>true</autoDetectLocalHelmBinary>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>initialize helm</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>init</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>create helm package</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>package</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>dry run helm package</id>
+                        <phase>integration-test</phase>
+                        <goals>
+                            <goal>dry-run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>deploy helm package</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>upload</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
 
         </plugins>
