@@ -304,7 +304,7 @@
 
                     <!-- start and stop to support integration tests -->
                     <!-- some other plugin on goal integration-test can validate the application -->
-                    <!-- helm should be more interesting since we can use variables to set test ports etc -->
+                    <!-- FIX THIS - disabled since it seems to trigger multiple builds
                     <execution>
                         <id>deploy cluster monitor</id>
                         <phase>pre-integration-test</phase>
@@ -348,14 +348,15 @@
                             <skip>${skipKubernetesTests}</skip>
                             <kubernetesManifest>${project.basedir}/src/main/kubernetes/ef-kubernetes-app.yaml</kubernetesManifest>
                         </configuration>
-                    </execution>
-
+                    </exec
+                    -->
                 </executions>
 
             </plugin>
 
             <!-- Generate helm Chart.yaml and create a helm package -->
             <!-- note that this plugin can download and use helm for us -->
+
             <plugin>
                 <groupId>com.kiwigrid</groupId>
                 <artifactId>helm-maven-plugin</artifactId>
