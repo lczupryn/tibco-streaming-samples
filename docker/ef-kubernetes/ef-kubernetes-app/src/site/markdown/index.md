@@ -44,8 +44,10 @@ Docker for desktop only supports a single node.
 
 ### Minikube
 
-An alternative is *minikube* - see https://kubernetes.io/docs/setup/learning-environment/minikube/ 
-for installation instructions.  Validate that *minikube* is the current context :
+An alternative is *Minikube* - see https://kubernetes.io/docs/setup/learning-environment/minikube/ 
+for installation instructions.  Minikube runs Kubernetes and Docker in VirtualBox.  See also 
+https://kubernetes.io/docs/setup/learning-environment/minikube/#use-local-images-by-re-using-the-docker-daemon
+to allow mimikube to access locally built docker images.  Validate that *minikube* is the current context :
 
 ```
 $ kubectl config current-context
@@ -322,10 +324,23 @@ ef-kubernetes-app-1   1/1     Running   0          4m44s
 ef-kubernetes-app-2   1/1     Running   0          3m53s
 ```
 
+Since in values.yaml the location of the docker registry is to be remote, to force using docker
+images locally, override *dockerRegistry* :
+
+```
+$ helm --set dockerRegistry= install target/helm/repo/ef-kubernetes-app-1.0.0.tgz
+```
+
 Values can be set via the *--set* argument :
 
 ```
 $ helm install --set replicaCount=2 target/helm/repo/ef-kubernetes-app-1.0.0.tgz
+```
+
+Substitution parameters can be passed into the start-node script in the same way :
+
+```
+$ helm --set substitutions="a=b\,c=d" install target/helm/repo/ef-kubernetes-app-1.0.0.tgz
 ```
 
 The *helm delete* command will stop the application and delete the chart :

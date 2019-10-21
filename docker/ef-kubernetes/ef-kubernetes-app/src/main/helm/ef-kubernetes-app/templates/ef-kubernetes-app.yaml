@@ -43,6 +43,10 @@ spec:
           #
           image: {{ .Values.dockerRegistry }}docker/ef-kubernetes-app:1.0.0
           #
+          # Share application logs with docker console
+          #
+          tty: true
+          #
           # use heathcheck API to test for readiness
           #
           readinessProbe:
@@ -77,6 +81,9 @@ spec:
                 value: Basic dGliY286dGliY28=
             initialDelaySeconds: 30
             periodSeconds: 10
+          env:
+            - name: SUBSTITUTIONS
+              value: {{ .Values.substitutions }}
       #
       # the default DNS policy doesn't allow for full name
       # resolution by hostname, so we create our own and

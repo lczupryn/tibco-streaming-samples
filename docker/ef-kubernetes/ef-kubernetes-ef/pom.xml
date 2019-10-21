@@ -49,4 +49,9 @@
         <relativePath/>
     </parent>
 
+    <properties>
+        <!-- don't bother with the standard maven deploy -->
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
+
 </project>

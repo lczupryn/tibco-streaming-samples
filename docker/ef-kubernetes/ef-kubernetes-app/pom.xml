@@ -386,6 +386,7 @@
                             <goal>package</goal>
                         </goals>
                     </execution>
+                    <!-- note that dry-run requires helm to be started -->
                     <execution>
                         <id>dry run helm package</id>
                         <phase>integration-test</phase>

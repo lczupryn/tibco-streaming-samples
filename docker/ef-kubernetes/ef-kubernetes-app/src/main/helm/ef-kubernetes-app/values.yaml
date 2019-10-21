@@ -1,6 +1,9 @@
 #
 # Docker registry used to fetch docker images
 #
+# Note that this means to use locally build docker image use
+#   helm --set dockerRegistry= install ....
+#
 dockerRegistry: na-bos-artifacts.na.tibco.com:2001/
 
 #

@@ -60,6 +60,8 @@
 
     <properties>
         <com.tibco.ep.sb.studio.sample>true</com.tibco.ep.sb.studio.sample>
+        <!-- don't bother with the standard maven deploy -->
+        <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
 
     <!-- Aggregator pom -->

@@ -34,12 +34,12 @@
 #
 #   PRODUCT_HOME    the location of the StreamBase installation
 #   RUNTIME_HOME    the location of nodes, application and configuration
-#   NODENAME        the node name to use
 #
 # Optionally :
 #
 #   NODEDEPLOY      path of node deploy configuration file (default is to use application archive)
 #   SUBSTITUTIONS   substitution parameters (default is none)
+#   NODENAME        the node name to use (default is $(hostname).${artifactId})
 
 if [  "${NODENAME}" == "" ]
 then

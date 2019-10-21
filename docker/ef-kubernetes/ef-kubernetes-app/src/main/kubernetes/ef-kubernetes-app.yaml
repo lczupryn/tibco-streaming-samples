@@ -44,6 +44,10 @@ spec:
           image: docker/ef-kubernetes-app:1.0.0
           imagePullPolicy: Never
           #
+          # Share application logs to docker console
+          #
+          tty: true
+          #
           # use heathcheck API to test for readiness
           #
           readinessProbe:

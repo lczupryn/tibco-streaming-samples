@@ -53,6 +53,10 @@ spec:
           #
           ports:
             - containerPort: 11080
+          #
+          # Share application logs to docker console
+          #
+          tty: true
       #
       # the default DNS policy doesn't allow for full name
       # resolution by hostname, so we create our own and
