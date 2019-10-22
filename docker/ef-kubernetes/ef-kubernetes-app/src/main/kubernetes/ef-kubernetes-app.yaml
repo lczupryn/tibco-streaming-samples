@@ -30,6 +30,7 @@ spec:
   # can be scaled up or down
   #
   replicas: 3
+  podManagementPolicy: Parallel
   template:
     metadata:
       labels:
@@ -41,7 +42,7 @@ spec:
           #
           # docker image to use
           #
-          image: docker/ef-kubernetes-app:1.0.0
+          image: ef-kubernetes-app:1.0.0
           imagePullPolicy: Never
           #
           # Share application logs to docker console
@@ -62,7 +63,7 @@ spec:
               httpHeaders:
               - name: Authorization
                 value: Basic dGliY286dGliY28=
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 10
           #
           # use heathcheck API to test for liveness
@@ -80,7 +81,7 @@ spec:
               httpHeaders:
               - name: Authorization
                 value: Basic dGliY286dGliY28=
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 10
       #
       # the default DNS policy doesn't allow for full name

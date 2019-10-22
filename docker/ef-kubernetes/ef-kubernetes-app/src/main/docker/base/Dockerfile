@@ -61,6 +61,7 @@ RUN yum --assumeyes install \
     iptables \
     tc \
     telnet \
+    bind-utils \
     && yum clean all
 
 #
@@ -85,8 +86,14 @@ RUN ${docker.run.unpack}
 #
 # Allow user access to nodes and applications
 #
+RUN ls -lR /var
 RUN mkdir -p ${RUNTIME_HOME}
 RUN chown ${USER_NAME}:${USER_NAME} ${RUNTIME_HOME}
+
+#
+# required for openshift permissions - see https://docs.okd.io/latest/creating_images/guidelines.html#openshift-specific-guidelines
+#
+RUN chmod -R g=u /etc/passwd && chgrp -R 0 ${RUNTIME_HOME} && chmod -R g=u ${RUNTIME_HOME}
 
 #
 # Change to guest user

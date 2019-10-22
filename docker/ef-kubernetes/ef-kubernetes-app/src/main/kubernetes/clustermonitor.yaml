@@ -46,7 +46,7 @@ spec:
           #
           # docker image to use
           #
-          image: docker/clustermonitor:1.0.0
+          image: clustermonitor:1.0.0
           imagePullPolicy: Never
           #
           # expose the cluster monitor web port

@@ -5,6 +5,7 @@ Kubernetes.  The primary focus is desktop development, ie testing of application
 node.
 
 * [Prerequisites](#prerequisites)
+* [Development lifecycle](#development-lifecycle)
 * [Creating an application archive project for Kubernetes from TIBCO StreamBase Studio&trade;](#creating-an-application-archive-project-for-kubernetes-from-tibco-streambase-studio-trade)
 * [Containers and nodes](#containers-and-nodes)
 * [Building and running from TIBCO StreamBase Studio&trade;](#building-and-running-from-tibco-streambase-studio-trade)
@@ -16,8 +17,8 @@ node.
 **FIX THIS:** - TO-DO :
 
 * Consider volumes for storage ( application archive / node deployment configuration / substitution files etc )
+* Consider how to best work with multiple log files
 * Test with multi-node servers, eg Kind
-* Add further sample for OpenShift
 * Add further sample(s) for production deployment ( eg AWS, Google etc )
 
 <a name="prerequisites"></a>
@@ -47,7 +48,14 @@ Docker for desktop only supports a single node.
 An alternative is *Minikube* - see https://kubernetes.io/docs/setup/learning-environment/minikube/ 
 for installation instructions.  Minikube runs Kubernetes and Docker in VirtualBox.  See also 
 https://kubernetes.io/docs/setup/learning-environment/minikube/#use-local-images-by-re-using-the-docker-daemon
-to allow mimikube to access locally built docker images.  Validate that *minikube* is the current context :
+to allow mimikube to access locally built docker images.  
+
+* minikube start
+* eval $(minikube docker-env)
+* mvn install
+* mvn deploy
+
+Validate that *minikube* is the current context :
 
 ```
 $ kubectl config current-context
@@ -64,6 +72,33 @@ Since this is a Docker-in-Docker approach, its usage is different.
 **FIX THIS:** - need to add more details
 
 Kind supports a multiple nodes.
+
+### Minishift
+
+An alternative is *Minishift* - see https://docs.okd.io/latest/minishift/getting-started/installing.html
+for installation instructions.
+
+* minishift start
+* eval $(minishift docker-env)
+* mvn install
+* mvn deploy
+
+**FIX THIS:** needs work - DNS is failing for me
+
+<a name="development_lifecycle"></a>
+
+## Development lifecycle
+
+The assumed development lifecycle is :
+
+* All source in git
+* Source is build to images and packages via maven
+    * Studio calls maven for builds
+    * Continuous integration systems calls maven for builds 
+* Testing and development can be performed on a desktop running Docker and Kubernetes
+* Deployment of images and packages to a repository is via maven
+    * Continuous integration systems calls maven for deployment
+* When production creates pods, images and packages are taken from the repository
 
 <a name="creating-an-application-archive-project-for-kubernetes-from-tibco-streambase-studio-trade"></a>
 
@@ -82,6 +117,8 @@ Create a new StreamBase Project and enable both Docker and Kubernetes :
   * If **Kubernetes** or **OpenShift** is selected, new radio button for packaging type.  Options are **None** and **Helm**
     * **None** - no change
     * **Helm** - Helm Chart yaml file generated in src/main/helm and Kubernetes/OpenShift files are generated in the Helm structure instead.  Rule added to pom.xml to generate and deploy helm package.
+
+**FIX THIS:** - its not clear if we really need an OpenShift mode
 
 **FIX THIS:** - show animated gif of creating new project in studio
 
@@ -104,7 +141,8 @@ The Kubernetes configurations include -
 
 ## Containers and nodes
 
-**FIX THIS:** - describe statefulstate ( this gives us sensible DNS/hostname, templates and scaling )
+EventFlow nodes require a hostname, nodename and DNS working together.  Tests have shown that the Kubernetes 
+*statefulset* option supports EventFlow nodes easiest.
 
 The goal of this sample is to construct a deployment shown below :
 
@@ -138,7 +176,7 @@ Running *mvn install* will :
 * If Docker is not installed -
     * Run basic system test cases natively
 * If Kubernetes was selected and is installed :
-    * Cluster started under Kubernets, option for user to add system test cases, cluster stopped
+    * Cluster started under Kubernetes, option for user to add system test cases, cluster stopped
 * If Helm was selected :
     * Helm downloaded locally if not found
     * Helm package built

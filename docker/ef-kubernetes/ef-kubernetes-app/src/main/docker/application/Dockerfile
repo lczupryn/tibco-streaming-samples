@@ -26,10 +26,13 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 
-ARG docker_base_version
-FROM sbrt-base:${docker_base_version}
+#ARG docker_base_version
+#FROM sbrt-base:${docker_base_version}
+FROM sbrt-base:10.6.0-SNAPSHOT
 
 LABEL description="StreamBase Application"
+
+USER tibco
 
 #
 # Install application archive & test configurations
