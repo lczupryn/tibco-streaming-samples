@@ -86,7 +86,6 @@ RUN ${docker.run.unpack}
 #
 # Allow user access to nodes and applications
 #
-RUN ls -lR /var
 RUN mkdir -p ${RUNTIME_HOME}
 RUN chown ${USER_NAME}:${USER_NAME} ${RUNTIME_HOME}
 
@@ -99,3 +98,8 @@ RUN chmod -R g=u /etc/passwd && chgrp -R 0 ${RUNTIME_HOME} && chmod -R g=u ${RUN
 # Change to guest user
 #
 USER ${USER_NAME}
+
+#
+# entry point to start node
+#
+ENTRYPOINT ${PRODUCT_HOME}/start-node

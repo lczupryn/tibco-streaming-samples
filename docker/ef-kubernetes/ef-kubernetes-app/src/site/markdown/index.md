@@ -48,12 +48,32 @@ Docker for desktop only supports a single node.
 An alternative is *Minikube* - see https://kubernetes.io/docs/setup/learning-environment/minikube/ 
 for installation instructions.  Minikube runs Kubernetes and Docker in VirtualBox.  See also 
 https://kubernetes.io/docs/setup/learning-environment/minikube/#use-local-images-by-re-using-the-docker-daemon
-to allow mimikube to access locally built docker images.  
+to allow Minikube to access locally built docker images.  
 
-* minikube start
-* eval $(minikube docker-env)
-* mvn install
-* mvn deploy
+```
+$ minikube start
+😄  minikube v1.4.0 on Darwin 10.15
+💡  Tip: Use 'minikube start -p <name>' to create a new cluster, or 'minikube delete' to delete this one.
+🔄  Starting existing virtualbox VM for "minikube" ...
+⌛  Waiting for the host to be provisioned ...
+🐳  Preparing Kubernetes v1.16.0 on Docker 18.09.9 ...
+🔄  Relaunching Kubernetes using kubeadm ... 
+⌛  Waiting for: apiserver proxy etcd scheduler controller dns
+🏄  Done! kubectl is now configured to use "minikube"
+
+$ eval $(minikube docker-env)
+
+$ mvn install
+...
+```
+
+Deploy doesn't seem to be necessary with Minikube.
+
+You may want to grant more resources to Minikube, for example :
+
+```
+$ minikube start --cpus=4 --memory=8g
+```
 
 Validate that *minikube* is the current context :
 
@@ -78,10 +98,40 @@ Kind supports a multiple nodes.
 An alternative is *Minishift* - see https://docs.okd.io/latest/minishift/getting-started/installing.html
 for installation instructions.
 
-* minishift start
-* eval $(minishift docker-env)
-* mvn install
-* mvn deploy
+```
+$ minishift start
+-- Starting profile 'minishift'
+-- Check if deprecated options are used ... OK
+-- Checking if https://github.com is reachable ... OK
+...
+OpenShift server started.
+
+The server is accessible via web console at:
+    https://192.168.99.112:8443/console
+
+You are logged in as:
+    User:     developer
+    Password: <any value>
+
+To login as administrator:
+    oc login -u system:admin
+
+$ eval $(minishift docker-env)
+
+$  eval $(minishift oc-env)
+
+$ mvn install
+...
+
+$ mvn deploy
+...
+```
+
+You may want to grant more resources to Minikube, for example :
+
+```
+$ minishift start --cpus=4 --memory=8GB
+```
 
 **FIX THIS:** needs work - DNS is failing for me
 
@@ -666,4 +716,13 @@ $ minikube dashboard
 🚀  Launching proxy ...
 🤔  Verifying proxy health ...
 🎉  Opening http://127.0.0.1:57841/api/v1/namespaces/kubernetes-dashboard/services/http:kubernetes-dashboard:/proxy/ in your default browser...
+```
+
+### Minishift
+
+Starting the dashboard in a *minishift* context is via the *minishift console* command :
+
+```
+$ minishift console
+Opening the OpenShift Web console in the default browser...
 ```

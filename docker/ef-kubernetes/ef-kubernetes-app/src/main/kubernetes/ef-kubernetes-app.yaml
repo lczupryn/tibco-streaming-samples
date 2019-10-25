@@ -43,7 +43,6 @@ spec:
           # docker image to use
           #
           image: ef-kubernetes-app:1.0.0
-          imagePullPolicy: Never
           #
           # Share application logs to docker console
           #

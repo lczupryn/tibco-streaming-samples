@@ -53,6 +53,8 @@
         <docker_base_version>10.6.0-SNAPSHOT</docker_base_version>
         <skipLocalTests>true</skipLocalTests>
         <skipDockerTests>true</skipDockerTests>
+        <skipDocker>true</skipDocker>
+
         <dockerDomain>example.com</dockerDomain>
 
         <!-- don't bother with the standard maven deploy -->
@@ -71,8 +73,8 @@
         <!-- from minishift openshift registry -->
         <docker.push.registry>172.30.1.1:5000/myproject</docker.push.registry>
         <docker.push.username>developer</docker.push.username>
-        <!-- from oc whoami -t -->
-        <docker.push.password>C2HLSd4IGrfHE4LYanhsbj0XCMaQdMw0dfOaKUINwl4</docker.push.password>
+        <!-- from oc whoami -t ... of course you could run mvn deploy -Ddocker.push.password=$(oc whoami -t) -->
+        <docker.push.password>6C_Lx3tFNX0H177GobxbVHys6Ae8UAWjcWklsdUTplQ</docker.push.password>
 
     </properties>
     
@@ -152,6 +154,7 @@
             </activation>
             <properties>
                 <skipDockerTests>${skipTests}</skipDockerTests>
+                <skipDocker>false</skipDocker>
                 <skipLocalTests>true</skipLocalTests>
             </properties>
         </profile>
@@ -164,6 +167,7 @@
             </activation>
             <properties>
                 <skipDockerTests>${skipTests}</skipDockerTests>
+                <skipDocker>false</skipDocker>
                 <skipLocalTests>true</skipLocalTests>
             </properties>
         </profile>
@@ -176,6 +180,7 @@
             </activation>
             <properties>
                 <skipDockerTests>${skipTests}</skipDockerTests>
+                <skipDocker>false</skipDocker>
                 <skipLocalTests>true</skipLocalTests>
             </properties>
         </profile>
@@ -248,11 +253,12 @@
             <plugin>
                 <groupId>io.fabric8</groupId>
                 <artifactId>docker-maven-plugin</artifactId>
+                <version>0.31.0</version>
 
                 <configuration>
                     <logDate>default</logDate>
                     <verbose>true</verbose>
-                    <skip>${skipDockerTests}</skip>
+                    <skip>${skipDocker}</skip>
                     <images>
 
                         <!-- runtime base image -->
@@ -374,6 +380,7 @@
                         <configuration>
                             <startParallel>true</startParallel>
                             <autoCreateCustomNetworks>true</autoCreateCustomNetworks>
+                            <skip>${skipDockerTests}</skip>
                             <images>
                                 <image>
                                     <name>%a:%l</name>
@@ -434,6 +441,9 @@
                         <goals>
                             <goal>stop</goal>
                         </goals>
+                        <configuration>
+                            <skip>${skipDockerTests}</skip>
+                        </configuration>
                     </execution>
 
                 </executions>
@@ -451,7 +461,7 @@
                 <configuration>
                     <chartDirectory>${project.basedir}/src/main/helm/ef-kubernetes-app</chartDirectory>
                     <chartVersion>${project.version}</chartVersion>
-                    <!-- FIX THIS - I'm not sure how a hrelm repository would work in Kubernetes yet, but I'm testing with our internal artifactory server -->
+                    <!-- FIX THIS - I'm not sure how a helm repository would work in Kubernetes yet, but I'm testing with our internal artifactory server -->
                     <uploadRepoStable>
                         <name>UEP</name>
                         <url>http://na-bos-artifacts.na.tibco.com/artifactory/helm/</url>
