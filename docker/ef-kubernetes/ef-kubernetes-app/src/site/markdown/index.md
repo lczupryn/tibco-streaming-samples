@@ -225,7 +225,7 @@ Useful plugins include :
 
 * [Kubernetes Manifest Editor](https://marketplace.eclipse.org/content/kubernetes-manifest-editor) - YAML editor ( for both Kubernetes and Helm configurations )
 * [EKube](https://marketplace.eclipse.org/content/ekube) - Kubernetes explorer 
-* [Docker tooling](https://marketplace.eclipse.org/content/eclipse-docker-tooling), requires [TM Terminal](https://marketplace.eclipse.org/content/tm-terminal) ) - Docker explorer
+* [Docker tooling](https://marketplace.eclipse.org/content/eclipse-docker-tooling), requires [TM Terminal](https://marketplace.eclipse.org/content/tm-terminal) - Docker explorer
 
 ![resources](images/studio.png)
 
