@@ -223,8 +223,9 @@ The goal of this sample is to construct a deployment shown below :
 
 Useful plugins include :
 
-* [Kubernetes Manifest Editor](https://marketplace.eclipse.org/content/kubernetes-manifest-editor)
-* [EKube](https://marketplace.eclipse.org/content/ekube)
+* [Kubernetes Manifest Editor](https://marketplace.eclipse.org/content/kubernetes-manifest-editor) - YAML editor ( for both Kubernetes and Helm configurations )
+* [EKube](https://marketplace.eclipse.org/content/ekube) - Kubernetes explorer 
+* [Docker tooling](https://marketplace.eclipse.org/content/eclipse-docker-tooling), requires [TM Terminal](https://marketplace.eclipse.org/content/tm-terminal) ) - Docker explorer
 
 ![resources](images/studio.png)
 
@@ -464,7 +465,7 @@ release "wandering-leopard" deleted
 
 ## Deployment
 
-The Docker image(s) and Helm package can be deployed to a repository using the *mvn deploy* command :
+The Docker image(s) can be deployed to a Docker registry and the Helm package can be deployed to a repository using the *mvn deploy* command :
 
 ```
 $ mvn deploy
@@ -532,7 +533,8 @@ ef-kubernetes-app  0/3    0s
 
 ```
 
-Note that some Docker registry configurations may need to be treated as insecure :
+The Docker registry used should be secured.  However if it can't be ( for example a self-signed ssl certificate
+is being used ) then it may be possible to still use the registry by declaring it insecure :
 
 ![resources](images/insecure-registry.png)
 
