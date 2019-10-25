@@ -66,8 +66,8 @@ fg=blue</panel_attributes>
       <w>270</w>
       <h>60</h>
     </coordinates>
-    <panel_attributes>EventFlow node ef-kubernetes-app-0
-docker/ef-kubernetes-app:1.0.0
+    <panel_attributes>StreamBase node ef-kubernetes-app-0
+image ef-kubernetes-app:1.0.0
 fg=blue</panel_attributes>
     <additional_attributes/>
   </element>
@@ -114,8 +114,8 @@ ef-kubernetes-app</panel_attributes>
       <w>270</w>
       <h>60</h>
     </coordinates>
-    <panel_attributes>EventFlow node ef-kubernetes-app-0
-docker/ef-kubernetes-app:1.0.0
+    <panel_attributes>StreamBase node ef-kubernetes-app-1
+image ef-kubernetes-app:1.0.0
 fg=blue</panel_attributes>
     <additional_attributes/>
   </element>
@@ -138,8 +138,8 @@ fg=blue</panel_attributes>
       <w>270</w>
       <h>60</h>
     </coordinates>
-    <panel_attributes>EventFlow node ef-kubernetes-app-0
-docker/ef-kubernetes-app:1.0.0
+    <panel_attributes>StreamBase node ef-kubernetes-app-2
+image ef-kubernetes-app:1.0.0
 fg=blue</panel_attributes>
     <additional_attributes/>
   </element>
@@ -194,10 +194,12 @@ fg=red</panel_attributes>
     <coordinates>
       <x>230</x>
       <y>840</y>
-      <w>30</w>
+      <w>110</w>
       <h>50</h>
     </coordinates>
-    <panel_attributes>lt=&lt;-</panel_attributes>
+    <panel_attributes>lt=&lt;-
+HealthCheck
+</panel_attributes>
     <additional_attributes>10.0;10.0;10.0;30.0</additional_attributes>
   </element>
   <element>
@@ -218,10 +220,12 @@ fg=red</panel_attributes>
     <coordinates>
       <x>230</x>
       <y>650</y>
-      <w>30</w>
+      <w>110</w>
       <h>50</h>
     </coordinates>
-    <panel_attributes>lt=&lt;-</panel_attributes>
+    <panel_attributes>lt=&lt;-
+HealthCheck
+</panel_attributes>
     <additional_attributes>10.0;10.0;10.0;30.0</additional_attributes>
   </element>
   <element>
@@ -242,10 +246,12 @@ fg=red</panel_attributes>
     <coordinates>
       <x>230</x>
       <y>460</y>
-      <w>30</w>
+      <w>110</w>
       <h>50</h>
     </coordinates>
-    <panel_attributes>lt=&lt;-</panel_attributes>
+    <panel_attributes>lt=&lt;-
+HealthCheck
+</panel_attributes>
     <additional_attributes>10.0;10.0;10.0;30.0</additional_attributes>
   </element>
   <element>

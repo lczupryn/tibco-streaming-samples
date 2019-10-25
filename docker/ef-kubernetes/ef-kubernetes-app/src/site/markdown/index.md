@@ -1,9 +1,10 @@
 # Docker : Kubernetes EventFlow
 
-This sample describes how to deploy an application archive containing an EventFlow fragment to Docker using 
+This sample describes how to deploy an application archive containing an StreamBase fragment to Docker using 
 Kubernetes.  The primary focus is desktop development, ie testing of application images in a desktop Kubernetes 
 node.
 
+* [Terminology](#terminology)
 * [Prerequisites](#prerequisites)
 * [Development lifecycle](#development-lifecycle)
 * [Creating an application archive project for Kubernetes from TIBCO StreamBase Studio&trade;](#creating-an-application-archive-project-for-kubernetes-from-tibco-streambase-studio-trade)
@@ -20,6 +21,22 @@ node.
 * Consider how to best work with multiple log files
 * Test with multi-node servers, eg Kind
 * Add further sample(s) for production deployment ( eg AWS, Google etc )
+
+<a name="terminology"></a>
+
+## Terminology
+
+In this sample we are using multiple technology and so terms can be duplicated.  Some key terminology is listed below :
+
+* **Kubernetes Node** -  A worker machine
+* **Kubernetes Cluster** - A set of machines, called nodes, that run containerized applications managed by Kubernetes. A cluster has at least one worker node and at least one master node
+* **StreamBase Machine** - an execution context for a node.
+* **StreamBase Application** - business specific functionality.
+* **StreamBase Fragment** - an executable part of an application.
+* **StreamBase Cluster** - a logical grouping of nodes that communicate to support an application.
+* **StreamBase Node** - A container for engines
+* **StreamBase Engine** - Executable context for a fragment
+
 
 <a name="prerequisites"></a>
 
@@ -62,12 +79,8 @@ $ minikube start
 🏄  Done! kubectl is now configured to use "minikube"
 
 $ eval $(minikube docker-env)
-
-$ mvn install
 ...
 ```
-
-Deploy doesn't seem to be necessary with Minikube.
 
 You may want to grant more resources to Minikube, for example :
 
@@ -91,7 +104,7 @@ Since this is a Docker-in-Docker approach, its usage is different.
 
 **FIX THIS:** - need to add more details
 
-Kind supports a multiple nodes.
+Kind supports multiple nodes.
 
 ### Minishift
 
@@ -119,11 +132,6 @@ To login as administrator:
 $ eval $(minishift docker-env)
 
 $  eval $(minishift oc-env)
-
-$ mvn install
-...
-
-$ mvn deploy
 ...
 ```
 
@@ -142,13 +150,24 @@ $ minishift start --cpus=4 --memory=8GB
 The assumed development lifecycle is :
 
 * All source in git
-* Source is build to images and packages via maven
+* Source is built to images and packaged via maven
     * Studio calls maven for builds
-    * Continuous integration systems calls maven for builds 
+    * Continuous integration system calls maven for builds 
 * Testing and development can be performed on a desktop running Docker and Kubernetes
 * Deployment of images and packages to a repository is via maven
-    * Continuous integration systems calls maven for deployment
-* When production creates pods, images and packages are taken from the repository
+    * Continuous integration system calls maven for deployment
+* Production deployment uses container definitions stored in a Docker registry (or container registry)
+
+Maven lifecycle mapping is :
+
+* **mvn compile** - compile any java source in a StreamBase Fragment to classes
+* **mvn test** - run any junit test cases on the StreamBase Fragment
+* **mvn package** - build StreamBase Fragment archive, StreamBase Application archive or Helm package
+* **mvn pre-integration-phase** - build Docker image
+* **mvn pre-integration-phase** - start Docker container(s)
+* **mvn integration-phase** - any system test cases
+* **mvn pre-integration-phase** - stop Docker container(s)
+* **mvn deploy** - push Docker images to registry and deploy Helm packages to repository
 
 <a name="creating-an-application-archive-project-for-kubernetes-from-tibco-streambase-studio-trade"></a>
 
@@ -191,8 +210,8 @@ The Kubernetes configurations include -
 
 ## Containers and nodes
 
-EventFlow nodes require a hostname, nodename and DNS working together.  Tests have shown that the Kubernetes 
-*statefulset* option supports EventFlow nodes easiest.
+StreamBase nodes require a hostname, nodename and DNS working together.  Tests have shown that the Kubernetes 
+*statefulset* option supports StreamBase nodes easiest.
 
 The goal of this sample is to construct a deployment shown below :
 
@@ -215,9 +234,9 @@ Useful plugins include :
 
 Running *mvn install* will :
 
-* Build the eventflow fragment
-* Run eventflow fragment unit test cases
-* Build the application archive that contains the eventflow fragment
+* Build the StreamBase Fragment
+* Run StreamBase Fragment unit test cases
+* Build the application archive that contains the StreamBase Fragment
 * If Docker is installed :
     * Build a base image containing just the product
     * Build a application Docker image containing the application archive
