@@ -44,199 +44,29 @@
     <!-- common definitions for this version of StreamBase -->
     <parent>
         <groupId>com.tibco.ep.sb.parent</groupId>
-        <artifactId>ep-application-samples</artifactId> <!-- replace with ep-application-docker-samples avoid sample metadata -->
+        <artifactId>ep-application-docker-samples</artifactId> <!-- replace with ep-application-docker to avoid sample metadata -->
         <version>10.6.0-SNAPSHOT</version>
         <relativePath/>
     </parent>
 
     <properties>
-        <docker_base_version>10.6.0-SNAPSHOT</docker_base_version>
-        <skipLocalTests>true</skipLocalTests>
-        <skipDockerTests>true</skipDockerTests>
-        <skipDocker>true</skipDocker>
-
         <dockerDomain>example.com</dockerDomain>
 
-        <!-- don't bother with the standard maven deploy -->
+        <!-- by default, skip the standard maven deploy so that deploy can push docker images -->
         <maven.deploy.skip>true</maven.deploy.skip>
-
-        <!-- docker repository details - should be in settings.xml and managed in jenkins -->
-
-        <!-- internal server -->
-        <!-- 
-        <docker.push.registry>na-bos-artifacts.na.tibco.com:2001</docker.push.registry>
-        <docker.push.username>deployment</docker.push.username>
-        <docker.push.password>deployment</docker.push.password>
-        -->
-
-        <!-- minishift -->
-        <!-- from minishift openshift registry -->
-        <docker.push.registry>172.30.1.1:5000/myproject</docker.push.registry>
-        <docker.push.username>developer</docker.push.username>
-        <!-- from oc whoami -t ... of course you could run mvn deploy -Ddocker.push.password=$(oc whoami -t) -->
-        <docker.push.password>6C_Lx3tFNX0H177GobxbVHys6Ae8UAWjcWklsdUTplQ</docker.push.password>
-
     </properties>
     
     <dependencies>
         <dependency>
             <groupId>com.tibco.ep.samples.docker</groupId>
-            <artifactId>ef-kubernetes-ef</artifactId>
+            <artifactId>ef-kubernetes-eventflow</artifactId>
             <version>${project.version}</version>
             <type>ep-eventflow-fragment</type>
         </dependency>
     </dependencies>
 
-    <profiles>
-
-        <profile>
-            <id>docker base settings for linux</id>
-            <activation>
-                <os><name>linux</name></os>
-            </activation>
-            <properties>
-                <docker.scope>test</docker.scope>
-                <platform_linux.unpack>true</platform_linux.unpack>
-                <docker.run.unpack>true</docker.run.unpack>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>docker base settings for macos</id>
-            <activation>
-                <os><name>mac os x</name></os>
-            </activation>
-            <properties>
-                <docker.scope>provided</docker.scope>
-                <platform_linux.unpack>true</platform_linux.unpack>
-                <docker.run.unpack>true</docker.run.unpack>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>com.tibco.ep.sb.rt</groupId>
-                    <artifactId>platform_linuxx86_64</artifactId>
-                    <type>zip</type>
-                    <scope>provided</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>docker base settings for windows</id>
-            <activation>
-                <property>
-                    <name>path.separator</name>
-                    <value>;</value>
-                </property>
-            </activation>
-            <properties>
-                <docker.scope>provided</docker.scope>
-                <platform_linux.unpack>false</platform_linux.unpack>
-                <docker.run.unpack>cd ${PRODUCT_HOME}; unzip platform_linuxx86_64*.zip; rm platform_linuxx86_64*.zip</docker.run.unpack>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>com.tibco.ep.sb.rt</groupId>
-                    <artifactId>platform_linuxx86_64</artifactId>
-                    <type>zip</type>
-                    <scope>provided</scope>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <!-- if docker is available, build docker projects -->
-        <profile>
-            <id>Docker in local</id>
-            <activation>
-                <file>
-                    <exists>/usr/local/bin/docker</exists>
-                </file>
-            </activation>
-            <properties>
-                <skipDockerTests>${skipTests}</skipDockerTests>
-                <skipDocker>false</skipDocker>
-                <skipLocalTests>true</skipLocalTests>
-            </properties>
-        </profile>
-        <profile>
-            <id>Docker in bin</id>
-            <activation>
-                <file>
-                    <exists>/usr/bin/docker</exists>
-                </file>
-            </activation>
-            <properties>
-                <skipDockerTests>${skipTests}</skipDockerTests>
-                <skipDocker>false</skipDocker>
-                <skipLocalTests>true</skipLocalTests>
-            </properties>
-        </profile>
-        <profile>
-            <id>Docker in C:</id>
-            <activation>
-                <file>
-                    <exists>C:\Program Files\Docker\Docker\resources\bin\docker.exe</exists>
-                </file>
-            </activation>
-            <properties>
-                <skipDockerTests>${skipTests}</skipDockerTests>
-                <skipDocker>false</skipDocker>
-                <skipLocalTests>true</skipLocalTests>
-            </properties>
-        </profile>
-
-        <!-- if kubernetes is available, run kubernetes integration test -->
-        <profile>
-            <id>Kubectl in local</id>
-            <activation>
-                <file>
-                    <exists>/usr/local/bin/kubectl</exists>
-                </file>
-            </activation>
-            <properties>
-                <skipKubernetesTests>${skipTests}</skipKubernetesTests>
-            </properties>
-        </profile>
-
-        <!-- need download link for helm binaries -->
-        <profile>
-            <id>helm linux</id>
-            <activation>
-                <os><name>linux</name></os>
-            </activation>
-            <properties>
-                <helm.downloadUrl>https://get.helm.sh/helm-v2.14.3-linux-amd64.tar.gz</helm.downloadUrl>
-            </properties>
-        </profile>
-        <profile>
-            <id>helm macos</id>
-            <activation>
-                <os><name>mac os x</name></os>
-            </activation>
-            <properties>
-                <helm.downloadUrl>https://get.helm.sh/helm-v2.14.3-darwin-amd64.tar.gz</helm.downloadUrl>
-            </properties>
-        </profile>
-        <profile>
-            <id>helm windows</id>
-            <activation>
-                <property>
-                    <name>path.separator</name>
-                    <value>;</value>
-                </property>
-            </activation>
-            <properties>
-                <helm.downloadUrl>https://get.helm.sh/helm-v2.14.3-windows-amd64.zip</helm.downloadUrl>
-            </properties>
-        </profile>
-
-    </profiles>
-
     <build>
-
         <plugins>
-        
-            <!-- native tests if docker not installed -->
             <plugin>
                 <groupId>com.tibco.ep</groupId>
                 <artifactId>ep-maven-plugin</artifactId>
@@ -249,128 +79,43 @@
                      </nodes>
                  </configuration>
             </plugin>
-            
             <plugin>
                 <groupId>io.fabric8</groupId>
                 <artifactId>docker-maven-plugin</artifactId>
-                <version>0.31.0</version>
-
-                <configuration>
-                    <logDate>default</logDate>
-                    <verbose>true</verbose>
-                    <skip>${skipDocker}</skip>
-                    <images>
-
-                        <!-- runtime base image -->
-                        <image>
-                            <name>sbrt-base:10.6.0-SNAPSHOT</name>
-                            <build>
-                                <dockerFileDir>${project.basedir}/src/main/docker/base</dockerFileDir>
-                                <assembly>
-                                    <inline>
-                                        <dependencySets>
-                                            <dependencySet>
-                                                <includes>
-                                                    <include>com.tibco.ep.sb.rt:platform_linuxx86_64:zip</include>
-                                                </includes>
-                                                <scope>${docker.scope}</scope>
-                                                <unpack>${platform_linux.unpack}</unpack>
-                                                <fileMode>755</fileMode>
-                                                <directoryMode>755</directoryMode>
-                                                <outputDirectory></outputDirectory>
-                                            </dependencySet>
-                                        </dependencySets>
-                                        <files>
-                                            <file>
-                                                <source>${project.basedir}/src/main/docker/base/start-node</source>
-                                                <outputDirectory></outputDirectory>
-                                                <lineEnding>unix</lineEnding>
-                                            </file>
-                                        </files>
-                                    </inline>
-                                </assembly>
-                            </build>
-                        </image>
-
-                        <!-- application image -->
-                        <image>
-                            <name>%a:%l</name>
-                            <build>
-                                <dockerFileDir>${project.basedir}/src/main/docker/application</dockerFileDir>
-                                <assembly>
-                                    <inline>
-                                        <dependencySets>
-                                            <dependencySet>
-                                                <includes>
-                                                    <include>${project.groupId}:${project.artifactId}:ep-application:*</include>
-                                                </includes>
-                                                <unpack>false</unpack>
-                                                <outputDirectory>application</outputDirectory>
-                                            </dependencySet>
-                                        </dependencySets>
-                                        <fileSets>
-                                            <fileSet>
-                                                <directory>${project.basedir}/src/test/configurations</directory>
-                                                <outputDirectory>configuration</outputDirectory>
-                                            </fileSet>
-                                        </fileSets>
-                                    </inline>
-                                </assembly>
-                                <optimise>true</optimise>
-                            </build>
-                        </image>
-
-                        <!-- cluster monitor image -->
-                        <image>
-                            <name>clustermonitor:%l</name>
-                            <build>
-                                <dockerFileDir>${project.basedir}/src/main/docker/clustermonitor</dockerFileDir>
-                                <optimise>true</optimise>
-                                <assembly>
-                                    <inline>
-                                        <files>
-                                            <file>
-                                                <source>${project.basedir}/src/main/docker/clustermonitor/start-cluster-monitor</source>
-                                                <outputDirectory></outputDirectory>
-                                                <lineEnding>unix</lineEnding>
-                                            </file>
-                                        </files>
-                                    </inline>
-                                </assembly>
-                            </build>
-                        </image>
-
-                    </images>
-                    <!-- push authentication - seems to be required -->
-                    <authConfig>
-                        <push>
-                            <username>${docker.push.username}</username>
-                            <password>${docker.push.password}</password>
-                        </push>
-                    </authConfig>
-                </configuration>
-
                 <executions>
 
-                    <!-- Build docker images -->
+                    <!-- cluster monitor image -->
                     <execution>
-                        <id>build docker images</id>
+                        <id>clustermonitor image</id>
                         <phase>pre-integration-test</phase>
                         <goals>
                             <goal>build</goal>
-                        </goals>
-                    </execution>
-
-                    <!-- deploy docker images -->
-                    <execution>
-                        <id>push docker images</id>
-                        <phase>deploy</phase>
-                        <goals>
                             <goal>push</goal>
                         </goals>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>clustermonitor:%l</name>
+                                    <build>
+                                        <dockerFileDir>${project.basedir}/src/main/docker/clustermonitor</dockerFileDir>
+                                        <optimise>true</optimise>
+                                        <assembly>
+                                            <inline>
+                                                <files>
+                                                    <file>
+                                                        <source>${project.basedir}/src/main/docker/clustermonitor/start-cluster-monitor</source>
+                                                        <outputDirectory></outputDirectory>
+                                                        <lineEnding>unix</lineEnding>
+                                                    </file>
+                                                </files>
+                                            </inline>
+                                        </assembly>
+                                    </build>
+                                </image>
+                            </images>
+                        </configuration>
                     </execution>
 
-                    <!-- system test using docker installed locally -->
                     <execution>
                         <id>start nodes</id>
                         <phase>pre-integration-test</phase>
@@ -379,8 +124,8 @@
                         </goals>
                         <configuration>
                             <startParallel>true</startParallel>
-                            <autoCreateCustomNetworks>true</autoCreateCustomNetworks>
                             <skip>${skipDockerTests}</skip>
+                            <autoCreateCustomNetworks>true</autoCreateCustomNetworks>
                             <images>
                                 <image>
                                     <name>%a:%l</name>
@@ -400,9 +145,6 @@
                                         <wait>
                                             <log>COMMAND FINISHED</log>
                                             <time>100000</time>
-                                            <exec>
-                                                <postStart>epadmin servicename=A.${project.artifactId} display cluster</postStart>
-                                            </exec>
                                         </wait>
                                         <namingStrategy>alias</namingStrategy>
                                     </run>
@@ -425,9 +167,6 @@
                                         <wait>
                                             <log>COMMAND FINISHED</log>
                                             <time>100000</time>
-                                            <exec>
-                                                <postStart>epadmin servicename=B.${project.artifactId} display cluster</postStart>
-                                            </exec>
                                         </wait>
                                         <namingStrategy>alias</namingStrategy>
                                     </run>
@@ -445,55 +184,8 @@
                             <skip>${skipDockerTests}</skip>
                         </configuration>
                     </execution>
-
                 </executions>
             </plugin>
-
-            <!-- FIX THIS: can we do any useful local kubernetes tests with yaml ? -->
-            <!-- might be worth looking at https://github.com/deanjameseverett/k8-maven-plugin -->
-
-            <!-- Generate helm Chart.yaml and create a helm package -->
-            <!-- note that this plugin can download and use helm for us -->
-            <plugin>
-                <groupId>com.kiwigrid</groupId>
-                <artifactId>helm-maven-plugin</artifactId>
-                <version>4.12</version>
-                <configuration>
-                    <chartDirectory>${project.basedir}/src/main/helm/ef-kubernetes-app</chartDirectory>
-                    <chartVersion>${project.version}</chartVersion>
-                    <!-- FIX THIS - I'm not sure how a helm repository would work in Kubernetes yet, but I'm testing with our internal artifactory server -->
-                    <uploadRepoStable>
-                        <name>UEP</name>
-                        <url>http://na-bos-artifacts.na.tibco.com/artifactory/helm/</url>
-                        <type>ARTIFACTORY</type>
-                    </uploadRepoStable>
-                    <autoDetectLocalHelmBinary>true</autoDetectLocalHelmBinary>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>initialize helm</id>
-                        <phase>initialize</phase>
-                        <goals>
-                            <goal>init</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>create helm package</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>package</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>deploy helm package</id>
-                        <phase>deploy</phase>
-                        <goals>
-                            <goal>upload</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
         </plugins>
     </build>
 

@@ -4,20 +4,23 @@ This sample describes how to deploy an application archive containing an StreamB
 Kubernetes.  The primary focus is desktop development, ie testing of application images in a desktop Kubernetes 
 node.
 
+The sample is generated from the maven **eventflow-application-kubernetes-archetype** archetype with support for
+clustermonitor added.
+
 * [Terminology](#terminology)
 * [Prerequisites](#prerequisites)
 * [Development lifecycle](#development-lifecycle)
 * [Creating an application archive project for Kubernetes from TIBCO StreamBase Studio&trade;](#creating-an-application-archive-project-for-kubernetes-from-tibco-streambase-studio-trade)
+* [Cluster monitor](#cluster-monitor)
 * [Containers and nodes](#containers-and-nodes)
 * [Building and running from TIBCO StreamBase Studio&trade;](#building-and-running-from-tibco-streambase-studio-trade)
 * [Building this sample from the command line and running the integration test cases](#building-this-sample-from-the-command-line-and-running-the-integration-test-cases)
-* [Packaging with Helm](#packaging-with-helm)
 * [Deployment](#deployment)
+* [Runtime time settings](#runtime-time-settings)
 * [Further Kubernetes commands](#further-kubernetes-commands)
 
 **FIX THIS:** - TO-DO :
 
-* Consider volumes for storage ( application archive / node deployment configuration / substitution files etc )
 * Consider how to best work with multiple log files
 * Test with multi-node servers, eg Kind
 * Add further sample(s) for production deployment ( eg AWS, Google etc )
@@ -36,7 +39,6 @@ In this sample we are using multiple technology and so terms can be duplicated. 
 * **StreamBase Cluster** - a logical grouping of nodes that communicate to support an application.
 * **StreamBase Node** - A container for engines
 * **StreamBase Engine** - Executable context for a fragment
-
 
 <a name="prerequisites"></a>
 
@@ -58,7 +60,7 @@ $ kubectl config current-context
 docker-for-desktop
 ```
 
-Docker for desktop only supports a single node.
+Docker for desktop only supports a single node.  Default namespace is **default**.
 
 ### Minikube
 
@@ -95,7 +97,9 @@ $ kubectl config current-context
 minikube
 ```
 
-Minikube only supports a single node.
+Minikube only supports a single node.  Default namespace is **default**.
+
+**FIX THIS:** - Minikube 1.5.0 hangs when installing centos packages, 1.4.0 works
 
 ### Kind
 
@@ -131,7 +135,7 @@ To login as administrator:
 
 $ eval $(minishift docker-env)
 
-$  eval $(minishift oc-env)
+$ eval $(minishift oc-env)
 ...
 ```
 
@@ -140,6 +144,8 @@ You may want to grant more resources to Minikube, for example :
 ```
 $ minishift start --cpus=4 --memory=8GB
 ```
+
+Default namespace is **myproject**.
 
 **FIX THIS:** needs work - DNS is failing for me
 
@@ -162,12 +168,12 @@ Maven lifecycle mapping is :
 
 * **mvn compile** - compile any java source in a StreamBase Fragment to classes
 * **mvn test** - run any junit test cases on the StreamBase Fragment
-* **mvn package** - build StreamBase Fragment archive, StreamBase Application archive or Helm package
+* **mvn package** - build StreamBase Fragment archive or StreamBase Application archive
 * **mvn pre-integration-phase** - build Docker image
 * **mvn pre-integration-phase** - start Docker container(s)
 * **mvn integration-phase** - any system test cases
 * **mvn pre-integration-phase** - stop Docker container(s)
-* **mvn deploy** - push Docker images to registry and deploy Helm packages to repository
+* **mvn deploy** - push Docker images to registry
 
 <a name="creating-an-application-archive-project-for-kubernetes-from-tibco-streambase-studio-trade"></a>
 
@@ -178,16 +184,12 @@ Create a new StreamBase Project and enable both Docker and Kubernetes :
 **FIX THIS:** We need to update studio menu to something like :
 
 * Existing tickbox for **Docker**
-  * If **Docker** tickbox selected, show new radio button for container orchestration framework.  Options are **None**, **Kubernetes** and **OpenShift**
+  * If **Docker** tickbox selected, show new radio button for container orchestration framework.  Options are **None** or  **Kubernetes**
     * **None** - Docker only files generated
     * **Kubernetes** - Kubernetes yaml file generated in src/main/kubernetes, security.conf updated for the default Kubernetes network name
-    * **OpenShift** - OpenShift yaml file generated in src/main/openshift, security.conf updated for the default OpenShift network name
-  * If **Docker** tickbox selected, new tickbox to generate clustemonitor image - or maybe this stays as a sample ?
-  * If **Kubernetes** or **OpenShift** is selected, new radio button for packaging type.  Options are **None** and **Helm**
+  * If **Kubernetes** is selected, new radio button for packaging type.  Options are **None** and **Helm**
     * **None** - no change
-    * **Helm** - Helm Chart yaml file generated in src/main/helm and Kubernetes/OpenShift files are generated in the Helm structure instead.  Rule added to pom.xml to generate and deploy helm package.
-
-**FIX THIS:** - its not clear if we really need an OpenShift mode
+    * **Helm** - Helm Chart yaml file generated in src/main/helm and Kubernetes files are generated in the Helm structure instead.  Rule added to pom.xml to generate and deploy helm package.
 
 **FIX THIS:** - show animated gif of creating new project in studio
 
@@ -197,14 +199,73 @@ the necessary Kubernetes configurations for deployment.
 The Kubernetes configurations include -
 
 * [ef-kubernetes-app.yaml](../../../src/main/kubernetes/ef-kubernetes-app.yaml) - Kubernetes Service and StatefulSet definition for a scaling cluster
-* [clustermonitor.yaml](../../../src/main/kubernetes/clustermonitor.yaml) - Kubernetes Service and StatefulSet definition for cluster monitor
 * [security.conf](../../../src/main/configurations/security.conf) - Trusted hosts names need to match Kubernetes DNS names
-* [start-node](../../../src/main/docker/base/start-node) - Script updated to set a default NODENAME if not set and to set node username and password
-* [start-cluster-monitor](../../../src/main/docker/clustermonitor/start-cluster-monitor) - Script to start the cluster monitor
-* [Chart.yaml](../../../src/main/helm/ef-kubernetes-app/Chart.yaml) - Basic Helm Chart
-* [values.yaml](../../../src/main/helm/ef-kubernetes-app/values.yaml) - Helm variables
+* [start-node](../../../src/main/docker/base/start-node) - Script to start the StreamBase node
 
 **FIX THIS:** - current version of Kitematic doesn't display container logs.  I've been using the older 0.17.6 from https://github.com/docker/kitematic/releases/download/v0.17.6/Kitematic-0.17.6-Mac.zip
+
+<a name="creating-an-application-archive-project-for-kubernetes-from-maven"></a>
+
+## Creating an application archive project for Kubernetes from maven
+
+A maven project contain an eventflow fragment and application archive support Kubernetes can be created using the
+archetype **eventflow-application-kubernetes-archetype** :
+
+```
+mvn archetype:generate -B \
+        -DarchetypeGroupId=com.tibco.ep -DarchetypeArtifactId=eventflow-application-kubernetes-archetype -DarchetypeVersion=10.6.0-SNAPSHOT \
+        -DgroupId=com.tibco.ep.samples.docker -DartifactId=ef-kubernetes -Dpackage=com.tibco.ep.samples.docker -Dversion=1.0.0 -Dtestnodes=A,B,C -DkubernetesNamespace=default \
+        -Dname="Docker: Kubernetes EventFlow" -Ddescription="How to deploy an EventFlow application in Docker with Kubernetes"
+```
+
+**FIX THIS** - once done list all the kubernetes archetypes available
+
+<a name="cluster-monitor"></a>
+
+## Cluster monitor
+
+In this sample the generated project is enhanced by adding a cluster monitor docker image.  To support this an
+additional maven execution step is needed in pom.xml :
+
+```
+                    <!-- cluster monitor image -->
+                    <execution>
+                        <id>clustermonitor image</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>push</goal>
+                        </goals>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>clustermonitor:%l</name>
+                                    <build>
+                                        <dockerFileDir>${project.basedir}/src/main/docker/clustermonitor</dockerFileDir>
+                                        <optimise>true</optimise>
+                                        <assembly>
+                                            <inline>
+                                                <files>
+                                                    <file>
+                                                        <source>${project.basedir}/src/main/docker/clustermonitor/start-cluster-monitor</source>
+                                                        <outputDirectory></outputDirectory>
+                                                        <lineEnding>unix</lineEnding>
+                                                    </file>
+                                                </files>
+                                            </inline>
+                                        </assembly>
+                                    </build>
+                                </image>
+                            </images>
+                        </configuration>
+                    </execution>
+```
+
+Along with additional files :
+
+* [start-cluster-monitor](../../../src/main/docker/clustermonitor/start-cluster-monitor)
+* [Dockerfile](../../../src/main/docker/clustermonitor/Dockerfile)
+* [clustermonitor.yaml](../../../src/main/kubernetes/clustermonitor.yaml)
 
 <a name="containers-and-nodes"></a>
 
@@ -245,11 +306,6 @@ Running *mvn install* will :
     * Run basic system test to validate configuration
 * If Docker is not installed -
     * Run basic system test cases natively
-* If Kubernetes was selected and is installed :
-    * Cluster started under Kubernetes, option for user to add system test cases, cluster stopped
-* If Helm was selected :
-    * Helm downloaded locally if not found
-    * Helm package built
 
 **FIX THIS:** - add animated gif
 
@@ -264,49 +320,39 @@ statefulset.apps/ef-kubernetes-app created
 The *kubectl describe* command gives further details :
 
 ```
-$ kubectl describe service ef-kubernetes-app
-Name:              ef-kubernetes-app
-Namespace:         default
-Labels:            app=ef-kubernetes-app
-Annotations:       kubectl.kubernetes.io/last-applied-configuration:
-                     {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"labels":{"app":"ef-kubernetes-app"},"name":"ef-kubernetes-app","namespac...
-Selector:          app=ef-kubernetes-app
-Type:              ClusterIP
-IP:                None
-Session Affinity:  None
-Events:            <none>
-
 $ kubectl describe statefulset ef-kubernetes-app
 Name:               ef-kubernetes-app
 Namespace:          default
-CreationTimestamp:  Mon, 14 Oct 2019 18:31:37 +0100
+CreationTimestamp:  Wed, 30 Oct 2019 11:06:09 +0000
 Selector:           app=ef-kubernetes-app
 Labels:             <none>
 Annotations:        kubectl.kubernetes.io/last-applied-configuration:
-                      {"apiVersion":"apps/v1","kind":"StatefulSet","metadata":{"annotations":{},"name":"ef-kubernetes-app","namespace":"default"},"spec":{"repli...
-Replicas:           3 desired | 3 total
+                      {"apiVersion":"apps/v1","kind":"StatefulSet","metadata":{"annotations":{},"name":"ef-kubernetes-app","namespace":"default"},"spec":{"podMa...
+Replicas:           2 desired | 2 total
 Update Strategy:    RollingUpdate
-  Partition:        824638312156
-Pods Status:        3 Running / 0 Waiting / 0 Succeeded / 0 Failed
+  Partition:        824633996040
+Pods Status:        2 Running / 0 Waiting / 0 Succeeded / 0 Failed
 Pod Template:
   Labels:  app=ef-kubernetes-app
   Containers:
    ef-kubernetes-app:
-    Image:        docker/ef-kubernetes-app:1.0.0
-    Port:         <none>
-    Host Port:    <none>
-    Liveness:     http-get http://:8008/healthcheck/v1/status delay=30s timeout=1s period=10s #success=1 #failure=3
-    Readiness:    http-get http://:8008/healthcheck/v1/status delay=30s timeout=1s period=10s #success=1 #failure=3
-    Environment:  <none>
-    Mounts:       <none>
-  Volumes:        <none>
-Volume Claims:    <none>
+    Image:      ef-kubernetes-app:1.0.0
+    Port:       <none>
+    Host Port:  <none>
+    Liveness:   http-get http://:8008/healthcheck/v1/status delay=120s timeout=1s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:8008/healthcheck/v1/status delay=120s timeout=1s period=10s #success=1 #failure=3
+    Environment:
+      POD_NAME:        (v1:metadata.name)
+      POD_NAMESPACE:   (v1:metadata.namespace)
+      NODENAME:       $(POD_NAME).$(POD_NAMESPACE).ef-kubernetes-app
+    Mounts:           <none>
+  Volumes:            <none>
+Volume Claims:        <none>
 Events:
   Type    Reason            Age   From                    Message
   ----    ------            ----  ----                    -------
-  Normal  SuccessfulCreate  45m   statefulset-controller  create Pod ef-kubernetes-app-0 in StatefulSet ef-kubernetes-app successful
-  Normal  SuccessfulCreate  44m   statefulset-controller  create Pod ef-kubernetes-app-1 in StatefulSet ef-kubernetes-app successful
-  Normal  SuccessfulCreate  43m   statefulset-controller  create Pod ef-kubernetes-app-2 in StatefulSet ef-kubernetes-app successful
+  Normal  SuccessfulCreate  3m4s  statefulset-controller  create Pod ef-kubernetes-app-0 in StatefulSet ef-kubernetes-app successful
+  Normal  SuccessfulCreate  3m4s  statefulset-controller  create Pod ef-kubernetes-app-1 in StatefulSet ef-kubernetes-app successful
 ```
 
 The configuration file defines 3 replicas and so 3 POD's were created ( ef-kubernetes-app-0, ef-kubernetes-app-1 and ef-kubernetes-app-2 ).
@@ -315,228 +361,434 @@ To view the logs use *kubectl logs* :
 
 ```
 $ kubectl logs ef-kubernetes-app-0
-[ef-kubernetes-app-0.ef-kubernetes-app]     Installing node
-[ef-kubernetes-app-0.ef-kubernetes-app]         PRODUCTION executables
-[ef-kubernetes-app-0.ef-kubernetes-app]         Memory shared memory
-[ef-kubernetes-app-0.ef-kubernetes-app]         6 concurrent allocation segments
-[ef-kubernetes-app-0.ef-kubernetes-app]         Host name ef-kubernetes-app-0
-[ef-kubernetes-app-0.ef-kubernetes-app]         Container tibco/sb
-[ef-kubernetes-app-0.ef-kubernetes-app]         Starting container services
-[ef-kubernetes-app-0.ef-kubernetes-app]         Loading node configuration
-[ef-kubernetes-app-0.ef-kubernetes-app]         Auditing node security
-[ef-kubernetes-app-0.ef-kubernetes-app]         Deploying application
-[ef-kubernetes-app-0.ef-kubernetes-app]             Engine default-engine-for-com.tibco.ep.samples.docker.ef-kubernetes-ef
-[ef-kubernetes-app-0.ef-kubernetes-app]         Application deployed
-[ef-kubernetes-app-0.ef-kubernetes-app]         Administration port is 2000
-[ef-kubernetes-app-0.ef-kubernetes-app]         Discovery Service running on port 54321
-[ef-kubernetes-app-0.ef-kubernetes-app]         Service name is ef-kubernetes-app-0.ef-kubernetes-app
-[ef-kubernetes-app-0.ef-kubernetes-app]     Node installed
-[ef-kubernetes-app-0.ef-kubernetes-app]     Starting node
-[ef-kubernetes-app-0.ef-kubernetes-app]         Engine application::default-engine-for-com.tibco.ep.samples.docker.ef-kubernetes-ef started
-[ef-kubernetes-app-0.ef-kubernetes-app]         Loading node configuration
-[ef-kubernetes-app-0.ef-kubernetes-app]         Auditing node security
-[ef-kubernetes-app-0.ef-kubernetes-app]         Host name ef-kubernetes-app-0
-[ef-kubernetes-app-0.ef-kubernetes-app]         Administration port is 2000
-[ef-kubernetes-app-0.ef-kubernetes-app]         Discovery Service running on port 54321
-[ef-kubernetes-app-0.ef-kubernetes-app]         Service name is ef-kubernetes-app-0.ef-kubernetes-app
-[ef-kubernetes-app-0.ef-kubernetes-app]     Node started
+...
+11:06:33.000        203 INFO  t.e.d.h.distribution : Node ef-kubernetes-app-0.default.ef-kubernetes-app has new interface: 'IPv4:ef-kubernetes-app-0:22141' Local resolve, old interface: 'IPv4:ef-kubernetes-app-0:22140' Local resolve.
+[ef-kubernetes-app-0.default.ef-kubernetes-app]         Auditing node security
+[ef-kubernetes-app-0.default.ef-kubernetes-app]         Host name ef-kubernetes-app-0
+[ef-kubernetes-app-0.default.ef-kubernetes-app]         Administration port is 52269
+[ef-kubernetes-app-0.default.ef-kubernetes-app]         Discovery Service running on port 54321
+[ef-kubernetes-app-0.default.ef-kubernetes-app]         Service name is ef-kubernetes-app-0.default.ef-kubernetes-app
+[ef-kubernetes-app-0.default.ef-kubernetes-app]     Node started
 COMMAND FINISHED
+11:06:37.296 adPool - 1 INFO  StreamBaseHTTPServer : sbd at ef-kubernetes-app-0.ef-kubernetes-app.default.svc.cluster.local:10000; pid=190; version=10.6.0-SNAPSHOT_a2fc1c56fa113822f013c4031f0895e3d53fcc89; Listening
+11:08:34.610  [tid=202] INFO  n.ActiveNodeNotifier : Node ef-kubernetes-app-1.default.ef-kubernetes-app is active
 ```
 
 epadmin commands can be run with *kubectl exec* :
 
 ```
-$ kubectl exec ef-kubernetes-app-0 epadmin servicename=ef-kubernetes-app-0.ef-kubernetes-app display cluster
-[ef-kubernetes-app-0.ef-kubernetes-app] Node Name = ef-kubernetes-app-2.ef-kubernetes-app
-[ef-kubernetes-app-0.ef-kubernetes-app] Network Address = IPv4:ef-kubernetes-app-2:17318,IPv4:ef-kubernetes-app-2:17317
-[ef-kubernetes-app-0.ef-kubernetes-app] Current State = Up
-[ef-kubernetes-app-0.ef-kubernetes-app] Last State Change = 2019-10-14 12:59:46
-[ef-kubernetes-app-0.ef-kubernetes-app] Number of Connections = 2
-[ef-kubernetes-app-0.ef-kubernetes-app] Number of Queued PDUs = 0
-[ef-kubernetes-app-0.ef-kubernetes-app] Discovered = Dynamic
-[ef-kubernetes-app-0.ef-kubernetes-app] Location Code = 9439063122635943377
-
-[ef-kubernetes-app-0.ef-kubernetes-app] Node Name = ef-kubernetes-app-1.ef-kubernetes-app
-[ef-kubernetes-app-0.ef-kubernetes-app] Network Address = IPv4:ef-kubernetes-app-1:15968,IPv4:ef-kubernetes-app-1:15967
-[ef-kubernetes-app-0.ef-kubernetes-app] Current State = Up
-[ef-kubernetes-app-0.ef-kubernetes-app] Last State Change = 2019-10-14 12:59:43
-[ef-kubernetes-app-0.ef-kubernetes-app] Number of Connections = 3
-[ef-kubernetes-app-0.ef-kubernetes-app] Number of Queued PDUs = 0
-[ef-kubernetes-app-0.ef-kubernetes-app] Discovered = Dynamic
-[ef-kubernetes-app-0.ef-kubernetes-app] Location Code = 11990177587896688850
+$ kubectl exec ef-kubernetes-app-0 epadmin servicename=ef-kubernetes-app-0.default.ef-kubernetes-app display cluster
+[ef-kubernetes-app-0.default.ef-kubernetes-app] Node Name = ef-kubernetes-app-1.default.ef-kubernetes-app
+[ef-kubernetes-app-0.default.ef-kubernetes-app] Network Address = IPv4:ef-kubernetes-app-1:18364
+[ef-kubernetes-app-0.default.ef-kubernetes-app] Current State = Discovered
+[ef-kubernetes-app-0.default.ef-kubernetes-app] Last State Change = 2019-10-30 11:06:33
+[ef-kubernetes-app-0.default.ef-kubernetes-app] Number of Connections = 0
+[ef-kubernetes-app-0.default.ef-kubernetes-app] Number of Queued PDUs = 0
+[ef-kubernetes-app-0.default.ef-kubernetes-app] Discovered = Dynamic
+[ef-kubernetes-app-0.default.ef-kubernetes-app] Location Code = 7674331909344911063
 ```
-
-<a name="packaging-with-helm"></a>
-
-## Packaging with Helm
-
-When Helm is enabled, a Helm chart is created so that the application can be packaged, deployed to a repository and 
-installed into Kubernetes.
-
-```
-$ mvn install
-...
-[INFO] --- helm-maven-plugin:4.12:package (create helm package) @ ef-kubernetes-app ---
-[INFO] Packaging chart /Users/plord/workspace/tibco-streaming-samples-plord/docker/ef-kubernetes/ef-kubernetes-app/src/main/helm/ef-kubernetes-app...
-[INFO] Setting chart version to 1.0.0
-[INFO] Successfully packaged chart and saved it to: /Users/plord/workspace/tibco-streaming-samples-plord/docker/ef-kubernetes/ef-kubernetes-app/target/helm/repo/ef-kubernetes-app-1.0.0.tgz
-```
-
-If not already installed, Helm is downloaded and installed into the maven target directory.
-
-Prior to installing the Helm chart, Helm Tiller must be started in Kubernetes using the *helm init* command :
-
-```
-$ helm init
-$HELM_HOME has been configured at /Users/plord/.helm.
-
-Tiller (the Helm server-side component) has been installed into your Kubernetes Cluster.
-
-Please note: by default, Tiller is deployed with an insecure 'allow unauthenticated users' policy.
-To prevent this, run `helm init` with the --tiller-tls-verify flag.
-For more information on securing your installation see: https://docs.helm.sh/using_helm/#securing-your-helm-installation
-```
-
-The Helm chart can be installed with the *helm install* command - this will start the application up in Kubernetes :
-
-```
-$ helm install target/helm/repo/ef-kubernetes-app-1.0.0.tgz
-NAME:   wandering-leopard
-LAST DEPLOYED: Fri Oct 18 09:55:51 2019
-NAMESPACE: default
-STATUS: DEPLOYED
-
-RESOURCES:
-==> v1/Pod(related)
-NAME                 READY  STATUS             RESTARTS  AGE
-clustermonitor-0     0/1    ContainerCreating  0         0s
-ef-kubernetes-app-0  0/1    ContainerCreating  0         0s
-
-==> v1/Service
-NAME               TYPE       CLUSTER-IP    EXTERNAL-IP  PORT(S)          AGE
-clustermonitor     NodePort   10.97.171.21  <none>       11080:31000/TCP  0s
-ef-kubernetes-app  ClusterIP  None          <none>       <none>           0s
-
-==> v1/StatefulSet
-NAME               READY  AGE
-clustermonitor     0/1    0s
-ef-kubernetes-app  0/3    0s
-```
-
-```
-$ kubectl get pod
-NAME                  READY   STATUS    RESTARTS   AGE
-clustermonitor-0      1/1     Running   0          5m39s
-ef-kubernetes-app-0   1/1     Running   0          5m39s
-ef-kubernetes-app-1   1/1     Running   0          4m44s
-ef-kubernetes-app-2   1/1     Running   0          3m53s
-```
-
-Since in values.yaml the location of the docker registry is to be remote, to force using docker
-images locally, override *dockerRegistry* :
-
-```
-$ helm --set dockerRegistry= install target/helm/repo/ef-kubernetes-app-1.0.0.tgz
-```
-
-Values can be set via the *--set* argument :
-
-```
-$ helm install --set replicaCount=2 target/helm/repo/ef-kubernetes-app-1.0.0.tgz
-```
-
-Substitution parameters can be passed into the start-node script in the same way :
-
-```
-$ helm --set substitutions="a=b\,c=d" install target/helm/repo/ef-kubernetes-app-1.0.0.tgz
-```
-
-The *helm delete* command will stop the application and delete the chart :
-
-```
-$ helm list
-NAME                REVISION    UPDATED                     STATUS      CHART                   APP VERSION NAMESPACE
-wandering-leopard   1           Fri Oct 18 09:55:51 2019    DEPLOYED    ef-kubernetes-app-1.0.0             default  
-$ helm delete wandering-leopard
-release "wandering-leopard" deleted
-```
-
-<a name="deployment"></a>
 
 ## Deployment
 
-The Docker image(s) can be deployed to a Docker registry and the Helm package can be deployed to a repository using the *mvn deploy* command :
+The Docker image(s) can be pushed to a Docker registry using the **mvn install -Ddocker.skip.push=false** command.  Parameters
+must be supplied to enable to push, registry address and any credentials.
 
 ```
-$ mvn deploy
+$ mvn -Ddocker.skip.push=false -Ddocker.push.registry=address -Ddocker.push.username=username -Ddocker.push.password=password install
 ...
-[INFO] --- fabric8-maven-plugin:4.3.0:push (push docker images) @ ef-kubernetes-app ---
-[INFO] F8> The push refers to repository [na-bos-artifacts.na.tibco.com:2001/sbrt-base]
-60f3734b586c: Pushed 
-[INFO] F8> 10.6.0-SNAPSHOT: digest: sha256:16798d2f983e37cd5b0a841bf0c5d542e3fa05c01591223f83e5d5db1b33021d size: 1991
-[INFO] F8> Pushed sbrt-base:10.6.0-SNAPSHOT in 3 seconds 
-[INFO] F8> The push refers to repository [na-bos-artifacts.na.tibco.com:2001/docker/ef-kubernetes-app]
-5e7f255d6555: Pushed      
-[INFO] F8> 1.0.0: digest: sha256:2758e14a927e68f250edfeaa42ff172411fb07cea8c730c2ade0a3eb6cc80baa size: 2200
-[INFO] F8> Pushed docker/ef-kubernetes-app:1.0.0 in 7 seconds 
-[INFO] F8> The push refers to repository [na-bos-artifacts.na.tibco.com:2001/docker/clustermonitor]
-31724a993ac6: Pushed      
-[INFO] F8> 1.0.0: digest: sha256:0ba19caf684313357d8aa164e71aed1e21faa023c15cf86a878423676ecca632 size: 2407
-[INFO] F8> Pushed docker/clustermonitor:1.0.0 in 20 seconds 
-[INFO] 
-[INFO] --- helm-maven-plugin:4.12:upload (deploy helm package) @ ef-kubernetes-app ---
-[INFO] Uploading to http://na-bos-artifacts.na.tibco.com/artifactory/helm/
-
-[INFO] Uploading /Users/plord/workspace/tibco-streaming-samples-plord/docker/ef-kubernetes/ef-kubernetes-app/target/helm/repo/ef-kubernetes-app-1.0.0.tgz...
-[INFO] 201 - {
-  "repo" : "helm",
-  "path" : "/ef-kubernetes-app-1.0.0.tgz",
-  "created" : "2019-10-17T11:27:05.381-04:00",
-  "createdBy" : "deployment",
-  "downloadUri" : "http://na-bos-artifacts.na.tibco.com:8081/artifactory/helm/ef-kubernetes-app-1.0.0.tgz",
-  "mimeType" : "application/x-gzip",
-  "size" : "1227",
-  "checksums" : {
-    "sha1" : "b8c3c684ece2ce63df74fa9f66049aade92787b1",
-    "md5" : "068f708d94747c5c47e866ab85bde8d9"
-  },
-  "originalChecksums" : {
-  },
-  "uri" : "http://na-bos-artifacts.na.tibco.com:8081/artifactory/helm/ef-kubernetes-app-1.0.0.tgz"
-}
+[INFO] --- docker-maven-plugin:0.31.0:push (application image) @ ef-kubernetes-app ---
+[INFO] DOCKER> The push refers to repository [na-bos-artifacts.na.tibco.com:2001/ef-kubernetes-app]
+55a843a54288: Pushed      
+f016de91ab2b: Layer already exists 
+34c8768ddc95: Layer already exists 
+b8c41896324f: Layer already exists 
+baa468107823: Layer already exists 
+e3d3b04979b9: Layer already exists 
+a01ce1354841: Layer already exists 
+877b494a9f30: Layer already exists 
+[INFO] DOCKER> 1.0.0: digest: sha256:c00aa6126cff29008e136f660dd07f829bfc36a1c3dfb1a6aa7993f4d2f70a7b size: 1992
+[INFO] DOCKER> Pushed ef-kubernetes-app:1.0.0 in 7 seconds 
+...
 ```
 
-Once deployed, the application can be installed on any Kubernetes node :
+In the case of MiniShift, the password token can be obtained from **oc whoami -t** :
 
 ```
-$ helm install http://na-bos-artifacts.na.tibco.com:8081/artifactory/helm/ef-kubernetes-app-1.0.0.tgz
-NAME:   amber-newt
-LAST DEPLOYED: Fri Oct 18 10:10:00 2019
-NAMESPACE: default
-STATUS: DEPLOYED
-
-RESOURCES:
-==> v1/Pod(related)
-NAME                 READY  STATUS             RESTARTS  AGE
-clustermonitor-0     0/1    ContainerCreating  0         0s
-ef-kubernetes-app-0  0/1    ContainerCreating  0         0s
-
-==> v1/Service
-NAME               TYPE       CLUSTER-IP     EXTERNAL-IP  PORT(S)          AGE
-clustermonitor     NodePort   10.103.56.142  <none>       11080:31000/TCP  0s
-ef-kubernetes-app  ClusterIP  None           <none>       <none>           0s
-
-==> v1/StatefulSet
-NAME               READY  AGE
-clustermonitor     0/1    0s
-ef-kubernetes-app  0/3    0s
-
+$ mvn -Ddocker.skip.push=false -Ddocker.push.registry=$(minishift openshift registry)/myproject -Ddocker.push.username=$(oc whoami) -Ddocker.push.password=$(oc whoami -t) install
 ```
+
+These parameters are typically set in continuous integration builds in maven's settings.xml.
 
 The Docker registry used should be secured.  However if it can't be ( for example a self-signed ssl certificate
 is being used ) then it may be possible to still use the registry by declaring it insecure :
 
 ![resources](images/insecure-registry.png)
+
+<a name="runtime-time-settings"></a>
+
+## Runtime time settings
+
+The application docker image can contain everything that is required when the application is deployed.  However
+it is possible to pass arguments and files into the application when it is started up.
+
+### StreamBase node name
+
+The environment variable **NODENAME** can be set in the yaml StatefulSet - this all be passed to the
+**nodename** parameter of **epadmin install node**.  The generated default is **<pod name>.<namespace>.<application name>** :
+
+```
+          env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: NODENAME
+            value: "$(POD_NAME).$(POD_NAMESPACE).ef-kubernetes-app"
+```
+
+### Node deployment file
+
+The environment variable **NODEDEPLOY** can be set to the path of a node deployment file - this is passed to the
+**nodedeploy** parameter of **epadmin install node**.
+
+```
+...
+spec:
+  ...
+  template:
+    ...
+    spec:
+      ...
+      containers:
+        - name: ef-kubernetes-app
+          env:
+          - name: NODEDEPLOY
+            value: "/var/opt/tibco/streambase/configuration/node.conf"
+...
+```
+
+The file referenced can be included in the application docker image (via src/test/configurations/node.conf), 
+or supplied via a Kubernetes ConfigMap :
+
+```
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configuration
+  namespace: default
+apiVersion: v1
+data:
+  node.conf: |-
+    name = "ef-kubernetes-app"
+    version = "2.0.0"
+    type = "com.tibco.ep.dtm.configuration.node"
+
+    configuration = {
+        NodeDeploy = {
+            nodes = {
+                "${EP_NODE_NAME}" = {
+                    nodeType = "docker"
+                }
+            }
+        }
+    }
+```
+
+The ConfgMap has to be mounted via a volume :
+
+```
+...
+spec:
+...
+  template:
+  ...
+    spec:
+      volumes:
+        - name: configuration
+          configMap:
+            name: configuration
+      ...
+      containers:
+        - name: ef-kubernetes-app
+          volumeMounts:
+          - name: configuration
+            mountPath: /var/opt/tibco/streambase/configuration
+          env:
+          - name: NODEDEPLOY
+            value: "/var/opt/tibco/streambase/configuration/node.conf"
+...
+```
+
+### Substitution variables
+
+The environment variable **SUBSTITUTIONS** can be set in the yaml StatefulSet - this is passed to the
+**substitutions** parameter of **epadmin install node** :
+
+```
+...
+spec:
+...
+  template:
+  ...
+    spec:
+    ...
+      containers:
+        - name: ef-kubernetes-app
+          env:
+          - name: SUBSTITUTIONS
+            value: "param1=value1,param2=value2"
+...
+```
+
+### Substitution file
+
+The environment variable **SUBSTITUTIONFILE** can be set to the path of a substitution file - this is passed to the
+**substitutionfile** parameter of **epadmin install node**.
+
+```
+...
+spec:
+  ...
+  template:
+    ...
+    spec:
+      ...
+      containers:
+        - name: ef-kubernetes-app
+          env:
+          - name: SUBSTITUTIONFILE
+            value: "/var/opt/tibco/streambase/configuration/substitutions.txt"
+...
+```
+
+The file referenced can be included in the application docker image (via src/test/configurations/substitutions.txt),
+or supplied via a Kubernetes ConfigMap :
+
+```
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configuration
+  namespace: default
+apiVersion: v1
+data:
+  substitutions.txt: |-
+    name1=value1
+    name2=value2
+```
+
+The ConfgMap has to be mounted via a volume :
+
+```
+...
+spec:
+...
+  template:
+  ...
+    spec:
+      volumes:
+        - name: configuration
+          configMap:
+            name: configuration
+      ...
+      containers:
+        - name: ef-kubernetes-app
+          volumeMounts:
+          - name: configuration
+            mountPath: /var/opt/tibco/streambase/configuration
+          env:
+          - name: SUBSTITUTIONFILE
+            value: "/var/opt/tibco/streambase/configuration/substitutions.txt"
+...
+```
+
+### Administration port
+
+The environment variable **ADMINPORT** can be set in the yaml StatefulSet - this is passed to the
+**adminport** parameter of **epadmin install node** :
+
+```
+...
+spec:
+...
+  template:
+  ...
+    spec:
+    ...
+      containers:
+        - name: ef-kubernetes-app
+          env:
+          - name: ADMINPORT
+            value: "2000"
+...
+```
+
+This may be required in some cases where there is a port controlled firewall between StreamBase nodes.
+
+### Logback and other deploy directory files
+
+The environment variable **DEPLOYDIRECTORIES** can be set to the path of a deployment directory - this is passed to the
+**deploydirectories** parameter of **epadmin install node**.
+
+```
+...
+spec:
+  ...
+  template:
+    ...
+    spec:
+      ...
+      containers:
+        - name: ef-kubernetes-app
+          env:
+          - name: DEPLOYDIRECTORIES
+            value: "/var/opt/tibco/streambase/resources"
+...
+```
+
+The file referenced can be included in the application docker image (via src/test/resources), 
+or supplied via a Kubernetes ConfigMap :
+
+```
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: resources
+  namespace: default
+data:
+  logback-test.xml: |-
+    <?xml version="1.0" encoding="UTF-8"?>
+    <configuration>
+        <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{HH:mm:ss.SSS} %10.10thread %-5level %20.20logger{5} : %msg%n</pattern>
+            </encoder>
+        </appender>
+        <root level="DEBUG">
+            <appender-ref ref="Console" />
+        </root>
+    </configuration>
+```
+
+The ConfgMap has to be mounted via a volume :
+
+```
+...
+spec:
+...
+  template:
+  ...
+    spec:
+      volumes:
+        - name: resources
+          configMap:
+            name: resources
+      ...
+      containers:
+        - name: ef-kubernetes-app
+          volumeMounts:
+          - name: resources
+            mountPath: /var/opt/tibco/streambase/resources
+          env:
+          - name: DEPLOYDIRECTORIES
+            value: "/var/opt/tibco/streambase/resources"
+...
+```
+
+### Key store and passwords 
+
+The environment variable **KEYSTORE** can be set to the path of a key store file - this is passed to the
+**keystore** parameter of **epadmin install node**.  Likewise, the environment variable **KEYSTOREPASSWORD**
+can be set to the key store password - this is passed to the **keystorepassword** parameter of **epadmin install node**.
+
+Plain text password can be used, but secret ConfigMap is preferred.
+
+```
+...
+spec:
+  ...
+  template:
+    ...
+    spec:
+      ...
+      containers:
+        - name: ef-kubernetes-app
+          env:
+          - name: KEYSTORE
+            value: "/var/opt/tibco/streambase/configuration/mastersecret.ks"
+          - name: KEYSTOREPASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: secret
+                key: keystorepassword
+...
+```
+
+The file referenced can be included in the application docker image (via src/test/configurations/mastersecret.ks), 
+or supplied via a Kubernetes ConfigMap :
+
+```
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configuration
+  namespace: default
+apiVersion: v1
+data:
+  mastersecret.ks: 1$+b3hxBKCxDOIFCyxBaeztZaKiYANEKBPAjLlPZ9XwCw=$OUd5KZraLPRSAWvxquMtmrSdAmBC99G9oNLoBUk+aDc4x13DqFoQuN2b500=
+```
+
+The encoded password can be specified via a Secret :
+
+```
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret
+type: Opaque
+data:
+  keystorepassword: c2VjcmV0c2VjcmV0
+```
+
+The ConfgMap has to be mounted via a volume :
+
+```
+...
+spec:
+...
+  template:
+  ...
+    spec:
+      volumes:
+        - name: configuration
+          configMap:
+            name: configuration
+      ...
+      containers:
+        - name: ef-kubernetes-app
+          volumeMounts:
+          - name: configuration
+            mountPath: /var/opt/tibco/streambase/configuration
+          env:
+          - name: KEYSTORE
+            value: "/var/opt/tibco/streambase/configuration/mastersecret.ks"
+          - name: KEYSTOREPASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: secret
+                key: keystorepassword
+...
+```
+
+### Files referenced via HOCON configurations
+
+In the case of a HOCON configuration file referencing a file, this can be included in the docker image or via
+a ConfigMap in the same was as above.
+ 
 
 <a name="further-kubernetes-commands"></a>
 

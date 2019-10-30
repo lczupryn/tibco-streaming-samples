@@ -26,6 +26,9 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 
+#
+# Dockerfile for StreamBase generic base image
+#
 FROM centos:7
 
 LABEL description="StreamBase Base"
@@ -47,21 +50,13 @@ ENV USER_NAME        tibco
 # java      required for applications
 # zip       required for snapshots
 # unzip     required to unpack runtime on windows
-# net-tools useful to diagnose network issues
-# iptables  useful to simulate network issues
-# tc        useful to simulate network issues
 #
 RUN yum --assumeyes install \
     sysstat \
     gdb \
-    java-1.8.0-openjdk \
+    java-1.8.0-openjdk-headless \
     zip \
     unzip \
-    net-tools \
-    iptables \
-    tc \
-    telnet \
-    bind-utils \
     && yum clean all
 
 #
@@ -86,20 +81,11 @@ RUN ${docker.run.unpack}
 #
 # Allow user access to nodes and applications
 #
-RUN mkdir -p ${RUNTIME_HOME}
-RUN chown ${USER_NAME}:${USER_NAME} ${RUNTIME_HOME}
-
-#
 # required for openshift permissions - see https://docs.okd.io/latest/creating_images/guidelines.html#openshift-specific-guidelines
 #
-RUN chmod -R g=u /etc/passwd && chgrp -R 0 ${RUNTIME_HOME} && chmod -R g=u ${RUNTIME_HOME}
+RUN mkdir -p ${RUNTIME_HOME} && chown ${USER_NAME}:${USER_NAME} ${RUNTIME_HOME} && chmod -R g=u /etc/passwd && chgrp -R 0 ${RUNTIME_HOME} && chmod -R g=u ${RUNTIME_HOME}
 
 #
 # Change to guest user
 #
 USER ${USER_NAME}
-
-#
-# entry point to start node
-#
-ENTRYPOINT ${PRODUCT_HOME}/start-node

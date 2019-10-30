@@ -32,27 +32,35 @@
 #
 # Requires :
 #
-#   PRODUCT_HOME    the location of the StreamBase installation
-#   RUNTIME_HOME    the location of nodes, application and configuration
+#   PRODUCT_HOME      the location of the StreamBase installation
+#   RUNTIME_HOME      the location of nodes, application and configuration
+#   NODENAME          the node name to use
 #
 # Optionally :
 #
-#   NODEDEPLOY      path of node deploy configuration file (default is to use application archive)
-#   SUBSTITUTIONS   substitution parameters (default is none)
-#   NODENAME        the node name to use (default is $(hostname).${artifactId})
+#   NODEDEPLOY        path of node deploy configuration file (default is to use application archive)
+#   SUBSTITUTIONS     substitution parameters (default is none)
+#   SUBSTITUTIONFILE  path of substitutions file
+#   ADMINPORT         administration port
+#   DEPLOYDIRECTORIES comma separated list of deployment directories
+#   KEYSTORE          path to the keystore file containing the master secret
+#   KEYSTOREPASSWORD  The password for the keystore file
+
+set -x
+
+if [  "${NODENAME}" == "" ]
+then
+    echo "NODENAME is not set, use --env to set on the docker command line"
+    exit 1
+fi
 
 #
-# required for minishift - see openshift permissions - see https://docs.okd.io/latest/creating_images/guidelines.html#openshift-specific-guidelines
+# required for openshift - see https://docs.okd.io/latest/creating_images/guidelines.html#openshift-specific-guidelines
 #
 if ! whoami &> /dev/null; then
   if [ -w /etc/passwd ]; then
     echo "${USER_NAME:-default}:x:$(id -u):0:${USER_NAME:-default} user:${HOME}:/sbin/nologin" >> /etc/passwd
   fi
-fi
-
-if [  "${NODENAME}" == "" ]
-then
-	NODENAME=$(hostname).ef-kubernetes-app
 fi
 
 #
@@ -67,6 +75,26 @@ if [ "${SUBSTITUTIONS}" != "" ]
 then
     args="${args} --substitutions=${SUBSTITUTIONS}"
 fi
+if [ "${SUBSTITUTIONFILE}" != "" ]
+then
+    args="${args} --substitutionfile=${SUBSTITUTIONFILE}"
+fi
+if [ "${ADMINPORT}" != "" ]
+then
+    args="${args} --adminport=${ADMINPORT}"
+fi
+if [ "${DEPLOYDIRECTORIES}" != "" ]
+then
+    args="${args} --deploydirectories=${DEPLOYDIRECTORIES}"
+fi
+if [ "${KEYSTORE}" != "" ]
+then
+    args="${args} --keystore=${KEYSTORE}"
+fi
+if [ "${KEYSTOREPASSWORD}" != "" ]
+then
+    args="${args} --keystorepassword=${KEYSTOREPASSWORD}"
+fi
 
 #
 # clean up from any previous run
@@ -77,7 +105,6 @@ rm -rf ${RUNTIME_HOME}/node/${NODENAME}
 # install and start nodes
 #
 epadmin --username=${USER_NAME} --password=${USER_NAME} install node \
-    --adminport=2000 \
     --nodename=${NODENAME} \
     --nodedirectory=${RUNTIME_HOME}/node \
     ${args}

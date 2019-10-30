@@ -1,3 +1,31 @@
+#  Copyright (C) 2018-2019, TIBCO Software Inc.
+#  
+#  Redistribution and use in source and binary forms, with or without
+#  modification, are permitted provided that the following conditions are met:
+#  
+#  1. Redistributions of source code must retain the above copyright notice,
+#     this list of conditions and the following disclaimer.
+#  
+#  2. Redistributions in binary form must reproduce the above copyright notice,
+#     this list of conditions and the following disclaimer in the documentation
+#     and/or other materials provided with the distribution.
+#  
+#  3. Neither the name of the copyright holder nor the names of its contributors
+#     may be used to endorse or promote products derived from this software
+#     without specific prior written permission.
+#  
+#  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+#  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+#  IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+#  ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+#  LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+#  CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+#  SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+#  INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+#  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+#  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+#  POSSIBILITY OF SUCH DAMAGE.
+
 #
 # Service for the application cluster
 #
@@ -5,12 +33,48 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ef-kubernetes-app
+  namespace: default
   labels:
     app: ef-kubernetes-app
 spec:
   selector:
     app: ef-kubernetes-app
   clusterIP: None
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configuration
+  namespace: default
+data:
+  node.conf: |-
+    name = "ef-kubernetes-app"
+    version = "2.0.0"
+    type = "com.tibco.ep.dtm.configuration.node"
+
+    configuration = {
+        NodeDeploy = {
+            nodes = {
+                "${EP_NODE_NAME}" = {
+                    nodeType = "docker"
+                }
+            }
+        }
+    }
+  substitutions.txt: |-
+    name1=value1
+    name2=value2
+  mastersecret.ks: 1$+b3hxBKCxDOIFCyxBaeztZaKiYANEKBPAjLlPZ9XwCw=$OUd5KZraLPRSAWvxquMtmrSdAmBC99G9oNLoBUk+aDc4x13DqFoQuN2b500=
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: secret
+type: Opaque
+data:
+  keystorepassword: c2VjcmV0c2VjcmV0
 ---
 
 #
@@ -20,25 +84,33 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: ef-kubernetes-app
+  namespace: default
 spec:
   selector:
     matchLabels:
       app: ef-kubernetes-app
-  serviceName: "ef-kubernetes-app"
+  serviceName: ef-kubernetes-app
   #
-  # initially 3 eventflow nodes in the cluster
+  # initially 2 eventflow nodes in the cluster
   # can be scaled up or down
   #
-  replicas: 3
+  replicas: 2
   podManagementPolicy: Parallel
   template:
     metadata:
       labels:
         app: ef-kubernetes-app
     spec:
-      terminationGracePeriodSeconds: 10
+      volumes:
+        - name: configuration
+          configMap:
+            name: configuration
       containers:
         - name: ef-kubernetes-app
+          volumeMounts:
+          - name: configuration
+            mountPath: /var/opt/tibco/streambase/configuration
+
           #
           # docker image to use
           #
@@ -48,9 +120,36 @@ spec:
           #
           tty: true
           #
-          # use heathcheck API to test for readiness
+          # set StreamBase node name
           #
-          readinessProbe:
+          env:
+          - name: KEYSTORE
+            value: "/var/opt/tibco/streambase/configuration/mastersecret.ks"
+          - name: KEYSTOREPASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: secret
+                key: keystorepassword
+          - name: NODEDEPLOY
+            value: "/var/opt/tibco/streambase/configuration/node.conf"
+          - name: SUBSTITUTIONS
+            value: "param1=value1,param2=value2"
+          - name: SUBSTITUTIONFILE
+            value: "/var/opt/tibco/streambase/configuration/substitutions.txt"
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name            
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: NODENAME
+            value: "$(POD_NAME).$(POD_NAMESPACE).ef-kubernetes-app"
+          #
+          # use heathcheck API to test for startup
+          #
+          startupProbe:
             httpGet:
               path: /healthcheck/v1/status
               port: 8008
@@ -62,7 +161,7 @@ spec:
               httpHeaders:
               - name: Authorization
                 value: Basic dGliY286dGliY28=
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 10
           #
           # use heathcheck API to test for liveness
@@ -80,19 +179,13 @@ spec:
               httpHeaders:
               - name: Authorization
                 value: Basic dGliY286dGliY28=
-            initialDelaySeconds: 60
+            initialDelaySeconds: 120
             periodSeconds: 10
       #
       # the default DNS policy doesn't allow for full name
       # resolution by hostname, so we create our own and
       # specify the search domain name
       #
-      dnsPolicy: "None"
       dnsConfig:
-        nameservers:
-          - 10.96.0.10
         searches:
           - ef-kubernetes-app.default.svc.cluster.local
-        options:
-          - name: ndots
-            value: "5"

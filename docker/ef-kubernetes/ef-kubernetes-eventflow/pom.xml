@@ -35,7 +35,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.tibco.ep.samples.docker</groupId>
-    <artifactId>ef-kubernetes-ef</artifactId>
+    <artifactId>ef-kubernetes-eventflow</artifactId>
     <packaging>ep-eventflow-fragment</packaging>
     <version>1.0.0</version>
     <name>Docker: Kubernetes EventFlow - EventFlow Fragment</name>
@@ -50,7 +50,7 @@
     </parent>
 
     <properties>
-        <!-- don't bother with the standard maven deploy -->
+        <!-- by default, skip the standard maven deploy -->
         <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
 

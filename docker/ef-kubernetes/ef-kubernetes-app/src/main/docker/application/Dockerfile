@@ -25,13 +25,17 @@
 #  CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
+
 FROM sbrt-base:${docker_base_version}
 
 LABEL description="StreamBase Application"
-
-USER tibco
 
 #
 # Install application archive & test configurations
 #
 COPY maven ${RUNTIME_HOME}
+
+#
+# entry point to start node
+#
+ENTRYPOINT ${PRODUCT_HOME}/start-node
