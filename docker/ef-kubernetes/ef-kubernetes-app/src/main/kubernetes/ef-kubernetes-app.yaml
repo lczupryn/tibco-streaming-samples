@@ -33,48 +33,12 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ef-kubernetes-app
-  namespace: default
   labels:
     app: ef-kubernetes-app
 spec:
   selector:
     app: ef-kubernetes-app
   clusterIP: None
----
-
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: configuration
-  namespace: default
-data:
-  node.conf: |-
-    name = "ef-kubernetes-app"
-    version = "2.0.0"
-    type = "com.tibco.ep.dtm.configuration.node"
-
-    configuration = {
-        NodeDeploy = {
-            nodes = {
-                "${EP_NODE_NAME}" = {
-                    nodeType = "docker"
-                }
-            }
-        }
-    }
-  substitutions.txt: |-
-    name1=value1
-    name2=value2
-  mastersecret.ks: 1$+b3hxBKCxDOIFCyxBaeztZaKiYANEKBPAjLlPZ9XwCw=$OUd5KZraLPRSAWvxquMtmrSdAmBC99G9oNLoBUk+aDc4x13DqFoQuN2b500=
----
-
-apiVersion: v1
-kind: Secret
-metadata:
-  name: secret
-type: Opaque
-data:
-  keystorepassword: c2VjcmV0c2VjcmV0
 ---
 
 #
@@ -84,7 +48,6 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: ef-kubernetes-app
-  namespace: default
 spec:
   selector:
     matchLabels:
@@ -101,16 +64,8 @@ spec:
       labels:
         app: ef-kubernetes-app
     spec:
-      volumes:
-        - name: configuration
-          configMap:
-            name: configuration
       containers:
         - name: ef-kubernetes-app
-          volumeMounts:
-          - name: configuration
-            mountPath: /var/opt/tibco/streambase/configuration
-
           #
           # docker image to use
           #
@@ -123,19 +78,6 @@ spec:
           # set StreamBase node name
           #
           env:
-          - name: KEYSTORE
-            value: "/var/opt/tibco/streambase/configuration/mastersecret.ks"
-          - name: KEYSTOREPASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: secret
-                key: keystorepassword
-          - name: NODEDEPLOY
-            value: "/var/opt/tibco/streambase/configuration/node.conf"
-          - name: SUBSTITUTIONS
-            value: "param1=value1,param2=value2"
-          - name: SUBSTITUTIONFILE
-            value: "/var/opt/tibco/streambase/configuration/substitutions.txt"
           - name: POD_NAME
             valueFrom:
               fieldRef:
@@ -146,23 +88,6 @@ spec:
                 fieldPath: metadata.namespace
           - name: NODENAME
             value: "$(POD_NAME).$(POD_NAMESPACE).ef-kubernetes-app"
-          #
-          # use heathcheck API to test for startup
-          #
-          startupProbe:
-            httpGet:
-              path: /healthcheck/v1/status
-              port: 8008
-              #
-              # need to specify basic authentication
-              # this use the username and password that the eventflow
-              # node was started with
-              #
-              httpHeaders:
-              - name: Authorization
-                value: Basic dGliY286dGliY28=
-            initialDelaySeconds: 120
-            periodSeconds: 10
           #
           # use heathcheck API to test for liveness
           # should 

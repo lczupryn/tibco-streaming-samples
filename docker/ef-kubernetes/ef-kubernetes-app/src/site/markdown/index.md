@@ -19,12 +19,6 @@ clustermonitor added.
 * [Runtime time settings](#runtime-time-settings)
 * [Further Kubernetes commands](#further-kubernetes-commands)
 
-**FIX THIS:** - TO-DO :
-
-* Consider how to best work with multiple log files
-* Test with multi-node servers, eg Kind
-* Add further sample(s) for production deployment ( eg AWS, Google etc )
-
 <a name="terminology"></a>
 
 ## Terminology
@@ -55,7 +49,7 @@ When using Docker desktop, this can most easily be achieved by enabling Kubernet
 
 Validate that *docker-for-desktop* is the current context :
 
-```
+```shell
 $ kubectl config current-context
 docker-for-desktop
 ```
@@ -69,7 +63,7 @@ for installation instructions.  Minikube runs Kubernetes and Docker in VirtualBo
 https://kubernetes.io/docs/setup/learning-environment/minikube/#use-local-images-by-re-using-the-docker-daemon
 to allow Minikube to access locally built docker images.  
 
-```
+```shell
 $ minikube start
 😄  minikube v1.4.0 on Darwin 10.15
 💡  Tip: Use 'minikube start -p <name>' to create a new cluster, or 'minikube delete' to delete this one.
@@ -86,20 +80,20 @@ $ eval $(minikube docker-env)
 
 You may want to grant more resources to Minikube, for example :
 
-```
+```shell
 $ minikube start --cpus=4 --memory=8g
 ```
 
 Validate that *minikube* is the current context :
 
-```
+```shell
 $ kubectl config current-context
 minikube
 ```
 
 Minikube only supports a single node.  Default namespace is **default**.
 
-**FIX THIS:** - Minikube 1.5.0 hangs when installing centos packages, 1.4.0 works
+**Note:** - Minikube 1.5.0 hangs when installing centos packages, 1.4.0 works
 
 ### Kind
 
@@ -115,7 +109,7 @@ Kind supports multiple nodes.
 An alternative is *Minishift* - see https://docs.okd.io/latest/minishift/getting-started/installing.html
 for installation instructions.
 
-```
+```shell
 $ minishift start
 -- Starting profile 'minishift'
 -- Check if deprecated options are used ... OK
@@ -141,7 +135,7 @@ $ eval $(minishift oc-env)
 
 You may want to grant more resources to Minikube, for example :
 
-```
+```shell
 $ minishift start --cpus=4 --memory=8GB
 ```
 
@@ -202,7 +196,7 @@ The Kubernetes configurations include -
 * [security.conf](../../../src/main/configurations/security.conf) - Trusted hosts names need to match Kubernetes DNS names
 * [start-node](../../../src/main/docker/base/start-node) - Script to start the StreamBase node
 
-**FIX THIS:** - current version of Kitematic doesn't display container logs.  I've been using the older 0.17.6 from https://github.com/docker/kitematic/releases/download/v0.17.6/Kitematic-0.17.6-Mac.zip
+**Note:** - current version of Kitematic doesn't display container logs.  I've been using the older 0.17.6 from https://github.com/docker/kitematic/releases/download/v0.17.6/Kitematic-0.17.6-Mac.zip
 
 <a name="creating-an-application-archive-project-for-kubernetes-from-maven"></a>
 
@@ -211,7 +205,7 @@ The Kubernetes configurations include -
 A maven project contain an eventflow fragment and application archive support Kubernetes can be created using the
 archetype **eventflow-application-kubernetes-archetype** :
 
-```
+```shell
 mvn archetype:generate -B \
         -DarchetypeGroupId=com.tibco.ep -DarchetypeArtifactId=eventflow-application-kubernetes-archetype -DarchetypeVersion=10.6.0-SNAPSHOT \
         -DgroupId=com.tibco.ep.samples.docker -DartifactId=ef-kubernetes -Dpackage=com.tibco.ep.samples.docker -Dversion=1.0.0 -Dtestnodes=A,B,C -DkubernetesNamespace=default \
@@ -227,7 +221,7 @@ mvn archetype:generate -B \
 In this sample the generated project is enhanced by adding a cluster monitor docker image.  To support this an
 additional maven execution step is needed in pom.xml :
 
-```
+```xml
                     <!-- cluster monitor image -->
                     <execution>
                         <id>clustermonitor image</id>
@@ -259,6 +253,16 @@ additional maven execution step is needed in pom.xml :
                             </images>
                         </configuration>
                     </execution>
+```
+
+The trusted hosts configuration needs to include the cluster monitor host(s) :
+
+```scala
+configuration = {
+    TrustedHosts = {
+        hosts = [ "*.ef-kubernetes-app.default.svc.cluster.local", "*.clustermonitor.default.svc.cluster.local" ]
+    }
+}
 ```
 
 Along with additional files :
@@ -311,7 +315,7 @@ Running *mvn install* will :
 
 To start the cluster use the *kubectl apply* command :
 
-```
+```shell
 $ kubectl apply -f ef-kubernetes-app/src/main/kubernetes/ef-kubernetes-app.yaml 
 service/ef-kubernetes-app created
 statefulset.apps/ef-kubernetes-app created
@@ -319,7 +323,7 @@ statefulset.apps/ef-kubernetes-app created
 
 The *kubectl describe* command gives further details :
 
-```
+```shell
 $ kubectl describe statefulset ef-kubernetes-app
 Name:               ef-kubernetes-app
 Namespace:          default
@@ -359,7 +363,7 @@ The configuration file defines 3 replicas and so 3 POD's were created ( ef-kuber
 
 To view the logs use *kubectl logs* :
 
-```
+```shell
 $ kubectl logs ef-kubernetes-app-0
 ...
 11:06:33.000        203 INFO  t.e.d.h.distribution : Node ef-kubernetes-app-0.default.ef-kubernetes-app has new interface: 'IPv4:ef-kubernetes-app-0:22141' Local resolve, old interface: 'IPv4:ef-kubernetes-app-0:22140' Local resolve.
@@ -376,7 +380,7 @@ COMMAND FINISHED
 
 epadmin commands can be run with *kubectl exec* :
 
-```
+```shell
 $ kubectl exec ef-kubernetes-app-0 epadmin servicename=ef-kubernetes-app-0.default.ef-kubernetes-app display cluster
 [ef-kubernetes-app-0.default.ef-kubernetes-app] Node Name = ef-kubernetes-app-1.default.ef-kubernetes-app
 [ef-kubernetes-app-0.default.ef-kubernetes-app] Network Address = IPv4:ef-kubernetes-app-1:18364
@@ -393,7 +397,7 @@ $ kubectl exec ef-kubernetes-app-0 epadmin servicename=ef-kubernetes-app-0.defau
 The Docker image(s) can be pushed to a Docker registry using the **mvn install -Ddocker.skip.push=false** command.  Parameters
 must be supplied to enable to push, registry address and any credentials.
 
-```
+```shell
 $ mvn -Ddocker.skip.push=false -Ddocker.push.registry=address -Ddocker.push.username=username -Ddocker.push.password=password install
 ...
 [INFO] --- docker-maven-plugin:0.31.0:push (application image) @ ef-kubernetes-app ---
@@ -413,7 +417,7 @@ a01ce1354841: Layer already exists
 
 In the case of MiniShift, the password token can be obtained from **oc whoami -t** :
 
-```
+```shell
 $ mvn -Ddocker.skip.push=false -Ddocker.push.registry=$(minishift openshift registry)/myproject -Ddocker.push.username=$(oc whoami) -Ddocker.push.password=$(oc whoami -t) install
 ```
 
@@ -436,7 +440,7 @@ it is possible to pass arguments and files into the application when it is start
 The environment variable **NODENAME** can be set in the yaml StatefulSet - this all be passed to the
 **nodename** parameter of **epadmin install node**.  The generated default is **<pod name>.<namespace>.<application name>** :
 
-```
+```yaml
           env:
           - name: POD_NAME
             valueFrom:
@@ -455,7 +459,7 @@ The environment variable **NODENAME** can be set in the yaml StatefulSet - this 
 The environment variable **NODEDEPLOY** can be set to the path of a node deployment file - this is passed to the
 **nodedeploy** parameter of **epadmin install node**.
 
-```
+```yaml
 ...
 spec:
   ...
@@ -474,7 +478,7 @@ spec:
 The file referenced can be included in the application docker image (via src/test/configurations/node.conf), 
 or supplied via a Kubernetes ConfigMap :
 
-```
+```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -500,7 +504,7 @@ data:
 
 The ConfgMap has to be mounted via a volume :
 
-```
+```yaml
 ...
 spec:
 ...
@@ -528,7 +532,7 @@ spec:
 The environment variable **SUBSTITUTIONS** can be set in the yaml StatefulSet - this is passed to the
 **substitutions** parameter of **epadmin install node** :
 
-```
+```yaml
 ...
 spec:
 ...
@@ -549,7 +553,7 @@ spec:
 The environment variable **SUBSTITUTIONFILE** can be set to the path of a substitution file - this is passed to the
 **substitutionfile** parameter of **epadmin install node**.
 
-```
+```yaml
 ...
 spec:
   ...
@@ -568,7 +572,7 @@ spec:
 The file referenced can be included in the application docker image (via src/test/configurations/substitutions.txt),
 or supplied via a Kubernetes ConfigMap :
 
-```
+```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -583,7 +587,7 @@ data:
 
 The ConfgMap has to be mounted via a volume :
 
-```
+```yaml
 ...
 spec:
 ...
@@ -611,7 +615,7 @@ spec:
 The environment variable **ADMINPORT** can be set in the yaml StatefulSet - this is passed to the
 **adminport** parameter of **epadmin install node** :
 
-```
+```yaml
 ...
 spec:
 ...
@@ -634,7 +638,7 @@ This may be required in some cases where there is a port controlled firewall bet
 The environment variable **DEPLOYDIRECTORIES** can be set to the path of a deployment directory - this is passed to the
 **deploydirectories** parameter of **epadmin install node**.
 
-```
+```yaml
 ...
 spec:
   ...
@@ -653,7 +657,7 @@ spec:
 The file referenced can be included in the application docker image (via src/test/resources), 
 or supplied via a Kubernetes ConfigMap :
 
-```
+```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -676,7 +680,7 @@ data:
 
 The ConfgMap has to be mounted via a volume :
 
-```
+```yaml
 ...
 spec:
 ...
@@ -707,7 +711,7 @@ can be set to the key store password - this is passed to the **keystorepassword*
 
 Plain text password can be used, but secret ConfigMap is preferred.
 
-```
+```yaml
 ...
 spec:
   ...
@@ -731,7 +735,7 @@ spec:
 The file referenced can be included in the application docker image (via src/test/configurations/mastersecret.ks), 
 or supplied via a Kubernetes ConfigMap :
 
-```
+```yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -744,7 +748,7 @@ data:
 
 The encoded password can be specified via a Secret :
 
-```
+```yaml
 apiVersion: v1
 kind: Secret
 metadata:
@@ -756,7 +760,7 @@ data:
 
 The ConfgMap has to be mounted via a volume :
 
-```
+```yaml
 ...
 spec:
 ...
@@ -798,14 +802,14 @@ a ConfigMap in the same was as above.
 
 To scale up the cluster we can increase the number of replicas with the *kubectl scale* command :
 
-```
+```shell
 $ kubectl scale statefulsets ef-kubernetes-app --replicas=4
 statefulset.apps/ef-kubernetes-app scaled
 ```
 
 The new node is discovered and added to the cluster :
 
-```
+```shell
 $ kubectl exec ef-kubernetes-app-0 epadmin servicename=ef-kubernetes-app-0.ef-kubernetes-app display cluster
 [ef-kubernetes-app-0.ef-kubernetes-app] Node Name = ef-kubernetes-app-3.ef-kubernetes-app
 [ef-kubernetes-app-0.ef-kubernetes-app] Network Address = IPv4:ef-kubernetes-app-3:53214,IPv4:ef-kubernetes-app-3:53213
@@ -838,7 +842,7 @@ $ kubectl exec ef-kubernetes-app-0 epadmin servicename=ef-kubernetes-app-0.ef-ku
 
 Similarly, to scale down we can reduce the number of replicas with the *kubectl scale* command :
 
-```
+```shell
 $ kubectl scale statefulsets ef-kubernetes-app --replicas=3
 statefulset.apps/ef-kubernetes-app scaled
 ```
@@ -847,7 +851,7 @@ statefulset.apps/ef-kubernetes-app scaled
 
 To check POD status use the *kubectl get* command :
 
-```
+```shell
 $ kubectl get pod  
 NAME                  READY   STATUS    RESTARTS   AGE
 ef-kubernetes-app-0   1/1     Running   0          46m
@@ -859,7 +863,7 @@ ef-kubernetes-app-2   1/1     Running   0          45m
 
 Should a pod fail, the healthcheck should cause a re-start :
 
-```
+```shell
 $ kubectl get pods 
 NAME                  READY   STATUS    RESTARTS   AGE
 ef-kubernetes-app-0   1/1     Running   0          55m
@@ -871,7 +875,7 @@ ef-kubernetes-app-2   1/1     Running   1          53m
 
 To delete everything defined in the yaml file, use the *kubectl delete* command :
 
-```
+```shell
 $ kubectl delete -f ef-kubernetes-app/src/main/kubernetes/ef-kubernetes-app.yaml 
 service "ef-kubernetes-app" deleted
 statefulset.apps "ef-kubernetes-app" deleted
@@ -879,7 +883,7 @@ statefulset.apps "ef-kubernetes-app" deleted
 
 Individual services and statefulsets can also be deleted :
 
-```
+```shell
 $ kubectl delete service ef-kubernetes-app
 service "ef-kubernetes-app" deleted
 
@@ -891,7 +895,7 @@ statefulset.apps "ef-kubernetes-app" deleted
 
 To start the cluster monitor user the *kubectl apply* command to apply clustermonitor.yaml :
 
-```
+```shell
 $ kubectl apply -f ef-kubernetes-app/src/main/kubernetes/clustermonitor.yaml 
 service/clustermonitor created
 statefulset.apps/clustermonitor created
@@ -900,7 +904,7 @@ statefulset.apps/clustermonitor created
 This configuration uses *NodePort* to expose the web server externally.  Use the *kubectl describe service*
 command to determine the mapped port :
 
-```
+```shell
 $ kubectl describe service clustermonitor
 Name:                     clustermonitor
 Namespace:                default
@@ -930,7 +934,7 @@ In this case the URL http://localhost:31044 can be used to access the cluster mo
 
 To start the Kubernetes dashboard in a *docker-for-desktop* context see https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard :
 
-```
+```shell
 $ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml
 namespace/kubernetes-dashboard created
 serviceaccount/kubernetes-dashboard created
@@ -982,7 +986,7 @@ with token credentials as exported above :
 
 Starting the dashboard in a *minikube* context is via the *minikube dashboard* command :
 
-```
+```shell
 $ minikube dashboard
 🔌  Enabling dashboard ...
 🤔  Verifying dashboard health ...
@@ -995,7 +999,7 @@ $ minikube dashboard
 
 Starting the dashboard in a *minishift* context is via the *minishift console* command :
 
-```
+```shell
 $ minishift console
 Opening the OpenShift Web console in the default browser...
 ```
