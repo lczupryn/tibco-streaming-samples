@@ -58,7 +58,7 @@ Docker for desktop only supports a single node.  Default namespace is **default*
 
 ### Minikube
 
-An alternative is *Minikube* - see https://kubernetes.io/docs/setup/learning-environment/minikube/ 
+An alternative is **Minikube** - see https://kubernetes.io/docs/setup/learning-environment/minikube/ 
 for installation instructions.  Minikube runs Kubernetes and Docker in VirtualBox.  See also 
 https://kubernetes.io/docs/setup/learning-environment/minikube/#use-local-images-by-re-using-the-docker-daemon
 to allow Minikube to access locally built docker images.  
@@ -97,7 +97,7 @@ Minikube only supports a single node.  Default namespace is **default**.
 
 ### Kind
 
-An alternative is *kind* - see https://kind.sigs.k8s.io/docs/user/quick-start/ for installation instructions. 
+An alternative is **kind** - see https://kind.sigs.k8s.io/docs/user/quick-start/ for installation instructions. 
 Since this is a Docker-in-Docker approach, its usage is different.
 
 **FIX THIS:** - need to add more details
@@ -106,7 +106,7 @@ Kind supports multiple nodes.
 
 ### Minishift
 
-An alternative is *Minishift* - see https://docs.okd.io/latest/minishift/getting-started/installing.html
+An alternative is **Minishift** - see https://docs.okd.io/latest/minishift/getting-started/installing.html
 for installation instructions.
 
 ```shell
@@ -359,7 +359,7 @@ Events:
   Normal  SuccessfulCreate  3m4s  statefulset-controller  create Pod ef-kubernetes-app-1 in StatefulSet ef-kubernetes-app successful
 ```
 
-The configuration file defines 3 replicas and so 3 POD's were created ( ef-kubernetes-app-0, ef-kubernetes-app-1 and ef-kubernetes-app-2 ).
+The configuration file defines 2 replicas and so 2 POD's were created ( ef-kubernetes-app-0 and ef-kubernetes-app-1 ).
 
 To view the logs use *kubectl logs* :
 
@@ -394,7 +394,7 @@ $ kubectl exec ef-kubernetes-app-0 epadmin servicename=ef-kubernetes-app-0.defau
 
 ## Deployment
 
-The Docker image(s) can be pushed to a Docker registry using the **mvn install -Ddocker.skip.push=false** command.  Parameters
+The Docker image(s) can be pushed to a Docker registry using the *mvn install -Ddocker.skip.push=false* command.  Parameters
 must be supplied to enable to push, registry address and any credentials.
 
 ```shell
@@ -415,7 +415,7 @@ a01ce1354841: Layer already exists
 ...
 ```
 
-In the case of MiniShift, the password token can be obtained from **oc whoami -t** :
+In the case of MiniShift, the password token can be obtained from *oc whoami -t* :
 
 ```shell
 $ mvn -Ddocker.skip.push=false -Ddocker.push.registry=$(minishift openshift registry)/myproject -Ddocker.push.username=$(oc whoami) -Ddocker.push.password=$(oc whoami -t) install
@@ -438,7 +438,7 @@ it is possible to pass arguments and files into the application when it is start
 ### StreamBase node name
 
 The environment variable **NODENAME** can be set in the yaml StatefulSet - this all be passed to the
-**nodename** parameter of **epadmin install node**.  The generated default is **<pod name>.<namespace>.<application name>** :
+**nodename** parameter of *epadmin install node*.  The generated default is **<pod name>.<namespace>.<application name>** :
 
 ```yaml
           env:
@@ -457,7 +457,7 @@ The environment variable **NODENAME** can be set in the yaml StatefulSet - this 
 ### Node deployment file
 
 The environment variable **NODEDEPLOY** can be set to the path of a node deployment file - this is passed to the
-**nodedeploy** parameter of **epadmin install node**.
+**nodedeploy** parameter of *epadmin install node*.
 
 ```yaml
 ...
@@ -530,7 +530,7 @@ spec:
 ### Substitution variables
 
 The environment variable **SUBSTITUTIONS** can be set in the yaml StatefulSet - this is passed to the
-**substitutions** parameter of **epadmin install node** :
+**substitutions** parameter of *epadmin install node* :
 
 ```yaml
 ...
@@ -551,7 +551,7 @@ spec:
 ### Substitution file
 
 The environment variable **SUBSTITUTIONFILE** can be set to the path of a substitution file - this is passed to the
-**substitutionfile** parameter of **epadmin install node**.
+**substitutionfile** parameter of *epadmin install node*.
 
 ```yaml
 ...
@@ -613,7 +613,7 @@ spec:
 ### Administration port
 
 The environment variable **ADMINPORT** can be set in the yaml StatefulSet - this is passed to the
-**adminport** parameter of **epadmin install node** :
+**adminport** parameter of *epadmin install node* :
 
 ```yaml
 ...
@@ -636,7 +636,7 @@ This may be required in some cases where there is a port controlled firewall bet
 ### Logback and other deploy directory files
 
 The environment variable **DEPLOYDIRECTORIES** can be set to the path of a deployment directory - this is passed to the
-**deploydirectories** parameter of **epadmin install node**.
+**deploydirectories** parameter of *epadmin install node*.
 
 ```yaml
 ...
@@ -706,8 +706,8 @@ spec:
 ### Key store and passwords 
 
 The environment variable **KEYSTORE** can be set to the path of a key store file - this is passed to the
-**keystore** parameter of **epadmin install node**.  Likewise, the environment variable **KEYSTOREPASSWORD**
-can be set to the key store password - this is passed to the **keystorepassword** parameter of **epadmin install node**.
+**keystore** parameter of *epadmin install node*.  Likewise, the environment variable **KEYSTOREPASSWORD**
+can be set to the key store password - this is passed to the **keystorepassword** parameter of *epadmin install node*.
 
 Plain text password can be used, but secret ConfigMap is preferred.
 
@@ -901,7 +901,7 @@ service/clustermonitor created
 statefulset.apps/clustermonitor created
 ```
 
-This configuration uses *NodePort* to expose the web server externally.  Use the *kubectl describe service*
+This configuration uses **NodePort** to expose the web server externally.  Use the *kubectl describe service*
 command to determine the mapped port :
 
 ```shell
@@ -909,16 +909,15 @@ $ kubectl describe service clustermonitor
 Name:                     clustermonitor
 Namespace:                default
 Labels:                   app=clustermonitor
-Annotations:              kubectl.kubernetes.io/last-applied-configuration:
-                            {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"labels":{"app":"clustermonitor"},"name":"clustermonitor","namespace":"de...
+Annotations:              <none>
 Selector:                 app=clustermonitor
 Type:                     NodePort
-IP:                       10.105.204.60
+IP:                       10.100.141.122
 LoadBalancer Ingress:     localhost
-Port:                     http  11080/TCP
+Port:                     lvweb  11080/TCP
 TargetPort:               11080/TCP
-NodePort:                 http  31044/TCP
-Endpoints:                10.1.0.15:11080
+NodePort:                 lvweb  31044/TCP
+Endpoints:                10.1.1.38:11080
 Session Affinity:         None
 External Traffic Policy:  Cluster
 Events:                   <none>
@@ -932,7 +931,7 @@ In this case the URL http://localhost:31044 can be used to access the cluster mo
 
 ### Docker for desktop
 
-To start the Kubernetes dashboard in a *docker-for-desktop* context see https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard :
+To start the Kubernetes dashboard in a **docker-for-desktop** context see https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard :
 
 ```shell
 $ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta4/aio/deploy/recommended.yaml
@@ -984,7 +983,7 @@ with token credentials as exported above :
 
 ### Minikube
 
-Starting the dashboard in a *minikube* context is via the *minikube dashboard* command :
+Starting the dashboard in a **minikube** context is via the *minikube dashboard* command :
 
 ```shell
 $ minikube dashboard
@@ -997,7 +996,7 @@ $ minikube dashboard
 
 ### Minishift
 
-Starting the dashboard in a *minishift* context is via the *minishift console* command :
+Starting the dashboard in a **minishift** context is via the *minishift console* command :
 
 ```shell
 $ minishift console
