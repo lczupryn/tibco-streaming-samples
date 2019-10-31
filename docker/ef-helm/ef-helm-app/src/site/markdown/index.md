@@ -85,6 +85,19 @@ NAME               READY   STATUS    RESTARTS   AGE
 clustermonitor-0   1/1     Running   0          8m49s
 ef-helm-app-0      1/1     Running   0          8m18s
 ef-helm-app-1      1/1     Running   0          8m18s
+
+
+NOTES:
+Thank you for installing ef-helm-app - Docker: Helm EventFlow
+
+How to deploy an EventFlow application in Docker with Kubernetes and Helm
+
+Your release is named eerie-pike.
+
+To learn more about the release, try:
+
+  $ helm status eerie-pike
+  $ helm get eerie-pikey
 ```
 
 If the Docker image has been pushed to a remote repository, the *dockerRegistry*

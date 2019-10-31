@@ -1,19 +1,11 @@
-# Docker: Kubernetes EventFlow
+# Docker: Kubernetes EventFlow - Aggregator
 
-How to deploy an EventFlow application in Docker with Kubernetes
-
-Overview:
-
-* [Using in TIBCO StreamBase Studio&trade; master](docs/studio.md)
-* [Contributing](docs/contributing.md)
-* [License](docs/LICENSE)
-
-Sample categories:
+How to deploy an EventFlow application in Docker with Kubernetes - Aggregator
 
 This is a maven aggregator project consisting of the following maven modules :
 
-* [Docker: Kubernetes EventFlow - EventFlow Fragment](ef-kubernetes-ef/src/site/markdown/index.md) ([html](https://tibcosoftware.github.io/tibco-streaming-samples/10.5.0-SNAPSHOT/ef-kubernetes-ef/))
-* [Docker: Kubernetes EventFlow - Application](ef-kubernetes-app/src/site/markdown/index.md) ([html](https://tibcosoftware.github.io/tibco-streaming-samples/10.5.0-SNAPSHOT/ef-kubernetes-app/))
+* [Docker: Kubernetes EventFlow - EventFlow Fragment](ef-kubernetes-eventflow/src/site/markdown/index.md) ([html](https://tibcosoftware.github.io/tibco-streaming-samples/10.6.0-SNAPSHOT/docker/ef-kubernetes/ef-kubernetes-eventflow/))
+* [Docker: Kubernetes EventFlow - Application](ef-kubernetes-app/src/site/markdown/index.md) ([html](https://tibcosoftware.github.io/tibco-streaming-samples/10.6.0-SNAPSHOT/docker/ef-kubernetes/ef-kubernetes-app/))
 
 _This is a Tibco approved sample_
 

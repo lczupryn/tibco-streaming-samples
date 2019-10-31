@@ -1,8 +1,8 @@
-# Docker: Helm EventFlow - Application
+# Docker: Helm EventFlow - EventFlow Fragment
 
-How to deploy an EventFlow application in Docker with Kubernetes and Helm - Application
+How to deploy an EventFlow application in Docker with Kubernetes and Helm - EventFlow Fragment
 
-* [ef-helm-app](src/site/markdown/index.md) ([html](https://tibcosoftware.github.io/tibco-streaming-samples/10.6.0-SNAPSHOT/docker/ef-helm/ef-helm-app/))
+* [ef-helm-eventflow](src/site/markdown/index.md) ([html](https://tibcosoftware.github.io/tibco-streaming-samples/10.6.0-SNAPSHOT/docker/ef-helm/ef-helm-eventflow/))
 
 ---
 Copyright (c) 2018-2019, TIBCO Software Inc.
