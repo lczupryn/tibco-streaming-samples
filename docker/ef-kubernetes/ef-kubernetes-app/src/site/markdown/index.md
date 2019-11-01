@@ -158,6 +158,8 @@ The assumed development lifecycle is :
     * Continuous integration system calls maven for deployment
 * Production deployment uses containers stored in a Docker registry
 
+![resources](images/devops.svg)
+
 Maven lifecycle mapping is :
 
 * **mvn compile** - compile any java source in a StreamBase Fragment to classes
