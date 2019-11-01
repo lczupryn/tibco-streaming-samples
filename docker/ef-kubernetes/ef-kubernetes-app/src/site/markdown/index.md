@@ -202,6 +202,19 @@ The Kubernetes configurations include -
 
 ## Creating an application archive project for Kubernetes from maven
 
+The following Docker related archetypes are available :
+
+archetypeGroupId | archetypeArtifactId                        | Fragment  | Docker | Kubernetes | Helm
+---------------- |--------------------------------------------|-----------|--------|------------|-------
+com.tibco.ep     | application-docker-archetype               | None      | Yes    | No         | No
+com.tibco.ep     | application-kubernetes-archetype           | None      | Yes    | Yes        | No
+com.tibco.ep     | application-helm-archetype                 | None      | Yes    | Yes        | Yes
+com.tibco.ep     | eventflow-application-docker-archetype     | EventFlow | Yes    | No         | No
+com.tibco.ep     | java-application-docker-archetype          | Java      | Yes    | No         | No
+com.tibco.ep     | liveview-application-docker-archetype      | LiveView  | Yes    | No         | No
+com.tibco.ep     | eventflow-application-kubernetes-archetype | EventFlow | Yes    | Yes        | No
+com.tibco.ep     | eventflow-application-helm-archetype       | EventFlow | Yes    | Yes        | Yes
+
 A maven project contain an eventflow fragment and application archive support Kubernetes can be created using the
 archetype **eventflow-application-kubernetes-archetype** :
 
@@ -211,8 +224,6 @@ mvn archetype:generate -B \
         -DgroupId=com.tibco.ep.samples.docker -DartifactId=ef-kubernetes -Dpackage=com.tibco.ep.samples.docker -Dversion=1.0.0 -Dtestnodes=A,B,C -DkubernetesNamespace=default \
         -Dname="Docker: Kubernetes EventFlow" -Ddescription="How to deploy an EventFlow application in Docker with Kubernetes"
 ```
-
-**FIX THIS** - once done list all the kubernetes archetypes available
 
 <a name="cluster-monitor"></a>
 
@@ -224,11 +235,10 @@ additional maven execution step is needed in pom.xml :
 ```xml
                     <!-- cluster monitor image -->
                     <execution>
-                        <id>clustermonitor image</id>
+                        <id>build clustermonitor image</id>
                         <phase>pre-integration-test</phase>
                         <goals>
                             <goal>build</goal>
-                            <goal>push</goal>
                         </goals>
                         <configuration>
                             <images>
@@ -249,6 +259,21 @@ additional maven execution step is needed in pom.xml :
                                             </inline>
                                         </assembly>
                                     </build>
+                                </image>
+                            </images>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>push clustermonitor image</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>push</goal>
+                        </goals>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>clustermonitor:%l</name>
+                                    <build/>
                                 </image>
                             </images>
                         </configuration>
@@ -395,33 +420,57 @@ $ kubectl exec ef-kubernetes-app-0 epadmin servicename=ef-kubernetes-app-0.defau
 ## Deployment
 
 The Docker image(s) can be pushed to a Docker registry using the *mvn install -Ddocker.skip.push=false* command.  Parameters
-must be supplied to enable to push, registry address and any credentials.
+must be supplied to enable to push, registry address and any credentials.  Standard parameter *-Dmaven.deploy.skip=true* 
+is useful to skip deploying the maven artifacts.
 
 ```shell
-$ mvn -Ddocker.skip.push=false -Ddocker.push.registry=address -Ddocker.push.username=username -Ddocker.push.password=password install
+$ mvn -Dmaven.deploy.skip=true -Ddocker.push.registry=server.example.com:2001 -Ddocker.push.username=username -Ddocker.push.password=password deploy
 ...
-[INFO] --- docker-maven-plugin:0.31.0:push (application image) @ ef-kubernetes-app ---
+[INFO] --- docker-maven-plugin:0.31.0:push (push application image) @ ef-kubernetes-app ---
 [INFO] DOCKER> The push refers to repository [na-bos-artifacts.na.tibco.com:2001/ef-kubernetes-app]
-55a843a54288: Pushed      
-f016de91ab2b: Layer already exists 
-34c8768ddc95: Layer already exists 
-b8c41896324f: Layer already exists 
-baa468107823: Layer already exists 
-e3d3b04979b9: Layer already exists 
-a01ce1354841: Layer already exists 
+4960dc540fa2: Pushed      
+6aba3a55a28a: Layer already exists 
+e3deac335052: Layer already exists 
+2438d0874da2: Layer already exists 
+a51f3f96403a: Layer already exists 
+8aa787eac029: Layer already exists 
+5087ff81b27f: Layer already exists 
 877b494a9f30: Layer already exists 
-[INFO] DOCKER> 1.0.0: digest: sha256:c00aa6126cff29008e136f660dd07f829bfc36a1c3dfb1a6aa7993f4d2f70a7b size: 1992
-[INFO] DOCKER> Pushed ef-kubernetes-app:1.0.0 in 7 seconds 
+[INFO] DOCKER> 1.0.0: digest: sha256:8376f155273b662149e9e4a4bdc2524a6e0bc1a9682e8326803e4207b5783093 size: 1992
+[INFO] DOCKER> Pushed ef-kubernetes-app:1.0.0 in 18 seconds 
 ...
 ```
 
 In the case of MiniShift, the password token can be obtained from *oc whoami -t* :
 
 ```shell
-$ mvn -Ddocker.skip.push=false -Ddocker.push.registry=$(minishift openshift registry)/myproject -Ddocker.push.username=$(oc whoami) -Ddocker.push.password=$(oc whoami -t) install
+$ mvn -Dmaven.deploy.skip=true -Ddocker.push.registry=$(minishift openshift registry)/myproject -Ddocker.push.username=$(oc whoami) -Ddocker.push.password=$(oc whoami -t) deploy
 ```
 
-These parameters are typically set in continuous integration builds in maven's settings.xml.
+These parameters are typically set in continuous integration builds in maven's settings.xml :
+
+```xml
+<settings>
+    <servers>
+        <server>
+            <id>server.example.com:2001</id>
+            <username>username</username>
+            <password>password</password>
+        </server>
+    </servers>
+    <profiles>
+        <profile>
+            <id>cloud</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <docker.registry>server.example.com:2001</docker.registry>
+            </properties>
+        </profile>
+    </profiles>
+</settings>
+```
 
 The Docker registry used should be secured.  However if it can't be ( for example a self-signed ssl certificate
 is being used ) then it may be possible to still use the registry by declaring it insecure :
@@ -793,6 +842,21 @@ spec:
 In the case of a HOCON configuration file referencing a file, this can be included in the docker image or via
 a ConfigMap in the same was as above.
  
+### Upgrades
+
+Kubernetes ConfigMaps are global, so when upgrading with different configurations in ConfgMaps, it is recommended to
+include a version with the map name :
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: configuration-1.0.1
+  namespace: default
+apiVersion: v1
+data:
+...
+```
 
 <a name="further-kubernetes-commands"></a>
 

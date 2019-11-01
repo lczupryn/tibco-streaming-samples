@@ -69,7 +69,11 @@ spec:
           #
           # docker image to use
           #
-          image: {{ .Values.dockerRegistry }}ef-helm-app:1.0.0
+{{- if .Values.dockerRegistry }}
+          image: {{ .Values.dockerRegistry }}/ef-helm-app:1.0.0
+{{- else}}
+          image: ef-helm-app:1.0.0
+{{- end }}
           #
           # Share application logs to docker console
           #

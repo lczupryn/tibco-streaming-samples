@@ -51,9 +51,6 @@
 
     <properties>
         <dockerDomain>example.com</dockerDomain>
-
-        <!-- by default, skip the standard maven deploy so that deploy can push docker images -->
-        <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
     
     <dependencies>
@@ -155,19 +152,39 @@
             </plugin>
 
             <!-- Generate helm Chart.yaml and create a helm package -->
-            <!-- note that this plugin can download and use helm for us -->
+            <!-- source is filtered by maven to apply maven variables -->
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/helm/${project.artifactId}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/src/main/helm/${project.artifactId}</directory>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>com.kiwigrid</groupId>
                 <artifactId>helm-maven-plugin</artifactId>
                 <configuration>
-                    <chartDirectory>${project.basedir}/src/main/helm/${project.artifactId}</chartDirectory>
+                    <chartDirectory>${project.build.directory}/helm/${project.artifactId}</chartDirectory>
                     <chartVersion>${project.version}</chartVersion>
                     <useLocalHelmBinary>true</useLocalHelmBinary>
                     <uploadRepoStable>
-                        <url>http://na-bos-artifacts.na.tibco.com/artifactory/helm/</url>
-                        <type>ARTIFACTORY</type>
-                        <username>deployment</username>
-                        <password>deployment</password>
+                        <name>helm.registry</name>
+                        <url>${helm.registry}</url>
+                        <type>${helm.registry.type}</type>
                     </uploadRepoStable>
                 </configuration>
                 <executions>

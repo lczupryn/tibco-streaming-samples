@@ -134,13 +134,14 @@ release "old-parrot" deleted
 
 ## Deployment
 
-The helm package can be deployed using the *mvn deploy* command :
+The helm package can be deployed using the *mvn deploy* command.  Standard parameter *-Dmaven.deploy.skip=true* 
+is useful to skip deploying the maven artifacts.
 
 ```shell
-$ mvn deploy
+$ mvn -Dmaven.deploy.skip=true deploy
 ...
 [INFO] --- helm-maven-plugin:4.12:upload (deploy helm package) @ ef-helm-app ---
-[INFO] Uploading to http://na-bos-artifacts.na.tibco.com/artifactory/helm/
+[INFO] Uploading to http://server.example.com/artifactory/helm/
 
 [INFO] Uploading /Users/plord/workspace/tibco-streaming-samples-plord/docker/ef-helm/ef-helm-app/target/helm/repo/ef-helm-app-1.0.0.tgz...
 [INFO] 201 - {
@@ -148,7 +149,7 @@ $ mvn deploy
   "path" : "/ef-helm-app-1.0.0.tgz",
   "created" : "2019-10-31T11:23:17.332-04:00",
   "createdBy" : "deployment",
-  "downloadUri" : "http://na-bos-artifacts.na.tibco.com:8081/artifactory/helm/ef-helm-app-1.0.0.tgz",
+  "downloadUri" : "http://server.example.com/artifactory/helm/ef-helm-app-1.0.0.tgz",
   "mimeType" : "application/x-gzip",
   "size" : "2215",
   "checksums" : {
@@ -157,32 +158,46 @@ $ mvn deploy
   },
   "originalChecksums" : {
   },
-  "uri" : "http://na-bos-artifacts.na.tibco.com:8081/artifactory/helm/ef-helm-app-1.0.0.tgz"
+  "uri" : "http://server.example.com/artifactory/helm/ef-helm-app-1.0.0.tgz"
 }
 ```
 
-The repository details can be specified in the pom :
+The repository details can be specified in the pom.xml, or more typically set in continuous integration builds in maven's settings.xml :
 
 ```xml
-                <configuration>
-                    <chartDirectory>${project.basedir}/src/main/helm/${project.artifactId}</chartDirectory>
-                    <chartVersion>${project.version}</chartVersion>
-                    <useLocalHelmBinary>true</useLocalHelmBinary>
-                    <uploadRepoStable>
-                        <url>http://na-bos-artifacts.na.tibco.com/artifactory/helm/</url>
-                        <type>ARTIFACTORY</type>
-                        <username>username</username>
-                        <password>password</password>
-                    </uploadRepoStable>
-                </configuration>
+<settings>
+    <servers>
+        <server>
+            <id>server.example.com:2001</id>
+            <username>username</username>
+            <password>password</password>
+        </server>
+        <server>
+            <id>helm.registry</id>
+            <username>username</username>
+            <password>password</password>
+        </server>
+    </servers>
+    <profiles>
+        <profile>
+            <id>cloud</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <docker.registry>server.example.com:2001</docker.registry>
+                <helm.registry>http://server.example.com/artifactory/helm/</helm.registry>
+                <helm.registry.type>ARTIFACTORY</helm.registry.type>
+            </properties>
+        </profile>
+    </profiles>
+</settings>
 ```
-
-Or more typically set in continuous integration builds in maven's settings.xml.
 
 Once deployed, the application can be installed on any Kubernetes node :
 
 ```shell
-$ helm --set dockerRegistry=na-bos-artifacts.na.tibco.com:2001/ install http://na-bos-artifacts.na.tibco.com:8081/artifactory/helm/ef-helm-app-1.0.0.tgz
+$ helm install http://server.example.com/artifactory/helm/ef-helm-app-1.0.0.tgz
 NAME:   gangly-lemur
 LAST DEPLOYED: Thu Oct 31 15:23:12 2019
 NAMESPACE: default

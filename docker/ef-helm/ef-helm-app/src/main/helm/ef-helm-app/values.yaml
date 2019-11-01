@@ -27,11 +27,9 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 
 #
-# Docker registry used to fetch docker images
+# Docker registry used to fetch docker images - default is set from maven
 #
-# Default is no registry, so local image
-#
-dockerRegistry: 
+dockerRegistry: ${docker.registry}
 
 #
 # Number of replicas in the application cluster

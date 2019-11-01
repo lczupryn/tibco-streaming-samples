@@ -51,9 +51,6 @@
 
     <properties>
         <dockerDomain>example.com</dockerDomain>
-
-        <!-- by default, skip the standard maven deploy so that deploy can push docker images -->
-        <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
     
     <dependencies>
@@ -86,11 +83,10 @@
 
                     <!-- cluster monitor image -->
                     <execution>
-                        <id>clustermonitor image</id>
+                        <id>build clustermonitor image</id>
                         <phase>pre-integration-test</phase>
                         <goals>
                             <goal>build</goal>
-                            <goal>push</goal>
                         </goals>
                         <configuration>
                             <images>
@@ -111,6 +107,21 @@
                                             </inline>
                                         </assembly>
                                     </build>
+                                </image>
+                            </images>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>push clustermonitor image</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>push</goal>
+                        </goals>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>clustermonitor:%l</name>
+                                    <build/>
                                 </image>
                             </images>
                         </configuration>
