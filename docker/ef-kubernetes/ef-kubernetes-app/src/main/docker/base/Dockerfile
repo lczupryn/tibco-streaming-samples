@@ -31,7 +31,7 @@
 #
 FROM centos:7
 
-LABEL description="StreamBase Base"
+LABEL description="TIBCO Streaming base image"
 
 #
 # Set environment
@@ -63,7 +63,7 @@ RUN yum --assumeyes install \
 # Create a user to run nodes
 #
 RUN /usr/sbin/useradd \
-    --comment "TIBCO StreamBase Guest User" \
+    --comment "TIBCO Streaming Guest User" \
     --create-home \
     --user-group \
     --password ${USER_NAME} \

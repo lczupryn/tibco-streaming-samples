@@ -80,6 +80,53 @@
                 <groupId>io.fabric8</groupId>
                 <artifactId>docker-maven-plugin</artifactId>
                 <executions>
+
+                    <!-- cluster monitor image -->
+                    <execution>
+                        <id>build clustermonitor image</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>clustermonitor:%l</name>
+                                    <build>
+                                        <dockerFileDir>${project.basedir}/src/main/docker/clustermonitor</dockerFileDir>
+                                        <optimise>true</optimise>
+                                        <assembly>
+                                            <inline>
+                                                <files>
+                                                    <file>
+                                                        <source>${project.basedir}/src/main/docker/clustermonitor/start-cluster-monitor</source>
+                                                        <outputDirectory></outputDirectory>
+                                                        <lineEnding>unix</lineEnding>
+                                                    </file>
+                                                </files>
+                                            </inline>
+                                        </assembly>
+                                    </build>
+                                </image>
+                            </images>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>push clustermonitor image</id>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>push</goal>
+                        </goals>
+                        <configuration>
+                            <images>
+                                <image>
+                                    <name>clustermonitor:%l</name>
+                                    <build/>
+                                </image>
+                            </images>
+                        </configuration>
+                    </execution>
+
                     <execution>
                         <id>start nodes</id>
                         <phase>pre-integration-test</phase>
