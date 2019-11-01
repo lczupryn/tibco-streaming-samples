@@ -3,6 +3,7 @@
 This sample builds on the [main Kubernetes sample](../../../../../ef-kubernetes/ef-kubernetes-app/src/site/markdown/index.md) and adds  Helm packaging.
 
 * [Prerequisites](#prerequisites)
+* [Creating an application archive project for Helm from maven](#creating-an-application-archive-project-for-helm-from-maven)
 * [Packaging with Helm](#packaging-with-helm)
 * [Deployment](#deployment)
 
@@ -10,7 +11,7 @@ This sample builds on the [main Kubernetes sample](../../../../../ef-kubernetes/
 
 ## Prerequisites
 
-In addition to Docker and Kubernetes (see [main Kubernetes sample](../../../../../ef-kubernetes/ef-kubernetes-app/src/site/markdown/index.md) ), 
+In addition to Docker and Kubernetes ( see [main Kubernetes sample](../../../../../ef-kubernetes/ef-kubernetes-app/src/site/markdown/index.md) ), 
 Helm is also required to be installed and configured - see https://helm.sh/docs/using_helm/ .
 
 To use helm, tiller must be started in Kubernetes :
@@ -36,12 +37,38 @@ To prevent this, run `helm init` with the --tiller-tls-verify flag.
 For more information on securing your installation see: https://docs.helm.sh/using_helm/#securing-your-helm-installation
 ```
 
+<a name="creating-an-application-archive-project-for-kubernetes-from-maven"></a>
+
+## Creating an application archive project for Helm from maven
+
+The following Docker related archetypes are available :
+
+archetypeGroupId | archetypeArtifactId                        | Fragment  | Docker | Kubernetes | Helm
+---------------- |--------------------------------------------|-----------|--------|------------|-------
+com.tibco.ep     | application-docker-archetype               | None      | Yes    | No         | No
+com.tibco.ep     | application-kubernetes-archetype           | None      | Yes    | Yes        | No
+com.tibco.ep     | application-helm-archetype                 | None      | Yes    | Yes        | Yes
+com.tibco.ep     | eventflow-application-docker-archetype     | EventFlow | Yes    | No         | No
+com.tibco.ep     | java-application-docker-archetype          | Java      | Yes    | No         | No
+com.tibco.ep     | liveview-application-docker-archetype      | LiveView  | Yes    | No         | No
+com.tibco.ep     | eventflow-application-kubernetes-archetype | EventFlow | Yes    | Yes        | No
+com.tibco.ep     | eventflow-application-helm-archetype       | EventFlow | Yes    | Yes        | Yes
+
+A maven project contain an eventflow fragment and application archive support Kubernetes and Helm can be created using the
+archetype **eventflow-application-helm-archetype** :
+
+```shell
+mvn archetype:generate -B \
+        -DarchetypeGroupId=com.tibco.ep -DarchetypeArtifactId=eventflow-application-helm-archetype -DarchetypeVersion=10.6.0-SNAPSHOT \
+        -DgroupId=com.tibco.ep.samples.docker -DartifactId=ef-helm -Dpackage=com.tibco.ep.samples.docker -Dversion=1.0.0 -Dtestnodes=A,B,C -DkubernetesNamespace=default \
+        -Dname="Docker: Helm EventFlow" -Ddescription="How to deploy an EventFlow application in Docker with Kubernetes and Helm"
+```
+
 <a name="packaging-with-helm"></a>
 
 ## Packaging with Helm
 
-When Helm is enabled, a Helm chart is created so that the application can be packaged, deployed to a repository and 
-installed into Kubernetes.
+The the project is built with *mvn install* a Helm chart is created :
 
 ```shell
 $ mvn install
@@ -134,7 +161,7 @@ release "old-parrot" deleted
 
 ## Deployment
 
-The helm package can be deployed using the *mvn deploy* command.  Standard parameter *-Dmaven.deploy.skip=true* 
+The Helm chart can be deployed using the *mvn deploy* command.  Standard parameter *-Dmaven.deploy.skip=true* 
 is useful to skip deploying the maven artifacts.
 
 ```shell

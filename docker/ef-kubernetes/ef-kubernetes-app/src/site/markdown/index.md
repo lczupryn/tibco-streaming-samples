@@ -47,7 +47,7 @@ When using Docker desktop, this can most easily be achieved by enabling Kubernet
 
 ![resources](images/enable.png)
 
-Validate that *docker-for-desktop* is the current context :
+Validate that **docker-for-desktop** is the current context :
 
 ```shell
 $ kubectl config current-context
@@ -84,7 +84,7 @@ You may want to grant more resources to Minikube, for example :
 $ minikube start --cpus=4 --memory=8g
 ```
 
-Validate that *minikube* is the current context :
+Validate that **minikube** is the current context :
 
 ```shell
 $ kubectl config current-context
@@ -150,13 +150,13 @@ Default namespace is **myproject**.
 The assumed development lifecycle is :
 
 * All source in git
-* Source is built to images and packaged via maven
+* Images and packages are built from source by maven
     * Studio calls maven for builds
     * Continuous integration system calls maven for builds 
 * Testing and development can be performed on a desktop running Docker and Kubernetes
-* Deployment of images and packages to a repository is via maven
+* Deployment of images and packages to a repository is by maven
     * Continuous integration system calls maven for deployment
-* Production deployment uses container definitions stored in a Docker registry (or container registry)
+* Production deployment uses containers stored in a Docker registry
 
 Maven lifecycle mapping is :
 
@@ -419,8 +419,8 @@ $ kubectl exec ef-kubernetes-app-0 epadmin servicename=ef-kubernetes-app-0.defau
 
 ## Deployment
 
-The Docker image(s) can be pushed to a Docker registry using the *mvn install -Ddocker.skip.push=false* command.  Parameters
-must be supplied to enable to push, registry address and any credentials.  Standard parameter *-Dmaven.deploy.skip=true* 
+The Docker image(s) can be pushed to a Docker registry using the *mvn deploy* command.  Parameters
+may be supplied to set registry address and any credentials.  Standard parameter *-Dmaven.deploy.skip=true* 
 is useful to skip deploying the maven artifacts.
 
 ```shell
@@ -481,13 +481,13 @@ is being used ) then it may be possible to still use the registry by declaring i
 
 ## Runtime time settings
 
-The application docker image can contain everything that is required when the application is deployed.  However
-it is possible to pass arguments and files into the application when it is started up.
+The application docker image will usually contain all configurations and files to support the application.  However
+it is possible to inject configurations and files at runtime.
 
 ### StreamBase node name
 
-The environment variable **NODENAME** can be set in the yaml StatefulSet - this all be passed to the
-**nodename** parameter of *epadmin install node*.  The generated default is **<pod name>.<namespace>.<application name>** :
+The environment variable **NODENAME** can be set in the yaml StatefulSet - this is passed to the
+**nodename** parameter of *epadmin install node*.  The generated default is **pod name.namespace.application name** :
 
 ```yaml
           env:
@@ -524,7 +524,7 @@ spec:
 ...
 ```
 
-The file referenced can be included in the application docker image (via src/test/configurations/node.conf), 
+The file referenced can be included in the application docker image (from src/test/configurations/node.conf), 
 or supplied via a Kubernetes ConfigMap :
 
 ```yaml
@@ -618,7 +618,7 @@ spec:
 ...
 ```
 
-The file referenced can be included in the application docker image (via src/test/configurations/substitutions.txt),
+The file referenced can be included in the application docker image (from src/test/configurations/substitutions.txt),
 or supplied via a Kubernetes ConfigMap :
 
 ```yaml
@@ -703,7 +703,7 @@ spec:
 ...
 ```
 
-The file referenced can be included in the application docker image (via src/test/resources), 
+The file referenced can be included in the application docker image (from src/test/resources), 
 or supplied via a Kubernetes ConfigMap :
 
 ```yaml
@@ -755,7 +755,7 @@ spec:
 ### Key store and passwords 
 
 The environment variable **KEYSTORE** can be set to the path of a key store file - this is passed to the
-**keystore** parameter of *epadmin install node*.  Likewise, the environment variable **KEYSTOREPASSWORD**
+**keystore** parameter of *epadmin install node*.  Also, the environment variable **KEYSTOREPASSWORD**
 can be set to the key store password - this is passed to the **keystorepassword** parameter of *epadmin install node*.
 
 Plain text password can be used, but secret ConfigMap is preferred.
