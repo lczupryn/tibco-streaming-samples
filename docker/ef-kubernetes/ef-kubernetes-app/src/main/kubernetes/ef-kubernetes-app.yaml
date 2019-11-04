@@ -86,8 +86,15 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          - name: APPNAME
+            value: ef-kubernetes-app
           - name: NODENAME
-            value: "$(POD_NAME).$(POD_NAMESPACE).ef-kubernetes-app"
+            value: "$(POD_NAME).$(POD_NAMESPACE).$(APPNAME)"
+          #
+          # Use the fully qualified hostname to avoid DNS issues
+          #
+          - name: HOSTNAME
+            value: "$(POD_NAME).$(APPNAME).$(POD_NAMESPACE).svc.cluster.local"
           #
           # use heathcheck API to test for liveness
           # should 
@@ -106,11 +113,3 @@ spec:
                 value: Basic dGliY286dGliY28=
             initialDelaySeconds: 120
             periodSeconds: 10
-      #
-      # the default DNS policy doesn't allow for full name
-      # resolution by hostname, so we create our own and
-      # specify the search domain name
-      #
-      dnsConfig:
-        searches:
-          - ef-kubernetes-app.default.svc.cluster.local

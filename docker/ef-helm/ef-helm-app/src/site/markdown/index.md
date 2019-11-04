@@ -60,7 +60,7 @@ archetype **eventflow-application-helm-archetype** :
 ```shell
 mvn archetype:generate -B \
         -DarchetypeGroupId=com.tibco.ep -DarchetypeArtifactId=eventflow-application-helm-archetype -DarchetypeVersion=10.6.0-SNAPSHOT \
-        -DgroupId=com.tibco.ep.samples.docker -DartifactId=ef-helm -Dpackage=com.tibco.ep.samples.docker -Dversion=1.0.0 -Dtestnodes=A,B,C -DkubernetesNamespace=default \
+        -DgroupId=com.tibco.ep.samples.docker -DartifactId=ef-helm -Dpackage=com.tibco.ep.samples.docker -Dversion=1.0.0 -Dtestnodes=A,B,C \
         -Dname="Docker: Helm EventFlow" -Ddescription="How to deploy an EventFlow application in Docker with Kubernetes and Helm"
 ```
 

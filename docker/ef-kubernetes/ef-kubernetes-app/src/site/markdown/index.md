@@ -223,7 +223,7 @@ archetype **eventflow-application-kubernetes-archetype** :
 ```shell
 mvn archetype:generate -B \
         -DarchetypeGroupId=com.tibco.ep -DarchetypeArtifactId=eventflow-application-kubernetes-archetype -DarchetypeVersion=10.6.0-SNAPSHOT \
-        -DgroupId=com.tibco.ep.samples.docker -DartifactId=ef-kubernetes -Dpackage=com.tibco.ep.samples.docker -Dversion=1.0.0 -Dtestnodes=A,B,C -DkubernetesNamespace=default \
+        -DgroupId=com.tibco.ep.samples.docker -DartifactId=ef-kubernetes -Dpackage=com.tibco.ep.samples.docker -Dversion=1.0.0 -Dtestnodes=A,B,C \
         -Dname="Docker: Kubernetes EventFlow" -Ddescription="How to deploy an EventFlow application in Docker with Kubernetes"
 ```
 
@@ -467,7 +467,7 @@ These parameters are typically set in continuous integration builds in maven's s
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <docker.registry>server.example.com:2001</docker.registry>
+                <docker.push.registry>server.example.com:2001</docker.push.registry>
             </properties>
         </profile>
     </profiles>

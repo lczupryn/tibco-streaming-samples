@@ -111,6 +111,8 @@
 #     - name: NODEDEPLOY
 #       value: "/var/opt/tibco/streambase/configuration/node.conf"
 #
+# POD_NAMESPACE, POD_NAME and HOSTNAME are passed through from Kubernetes to support security.conf.
+#
 # See Docker, Kubernetes and Helm documentation for further details.
 #
 
@@ -139,7 +141,9 @@ then
 fi
 if [ "${SUBSTITUTIONS}" != "" ]
 then
-    args="${args} --substitutions=${SUBSTITUTIONS}"
+    args="${args} --substitutions=POD_NAMESPACE=${POD_NAMESPACE},POD_NAME=${POD_NAME},HOSTNAME=${HOSTNAME},${SUBSTITUTIONS}"
+else
+    args="${args} --substitutions=POD_NAMESPACE=${POD_NAMESPACE},POD_NAME=${POD_NAME},HOSTNAME=${HOSTNAME}"
 fi
 if [ "${SUBSTITUTIONFILE}" != "" ]
 then

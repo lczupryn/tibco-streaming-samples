@@ -29,7 +29,7 @@
 #
 # Docker registry used to fetch docker images - default is set from maven
 #
-dockerRegistry: ${docker.registry}
+dockerRegistry: ${docker.push.registry}
 
 #
 # Number of replicas in the application cluster
