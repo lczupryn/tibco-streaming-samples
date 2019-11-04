@@ -141,9 +141,17 @@ then
 fi
 if [ "${SUBSTITUTIONS}" != "" ]
 then
-    args="${args} --substitutions=POD_NAMESPACE=${POD_NAMESPACE},POD_NAME=${POD_NAME},HOSTNAME=${HOSTNAME},${SUBSTITUTIONS}"
+    if [ "${POD_NAMESPACE}" != "" ]
+    then
+        args="${args} --substitutions=POD_NAMESPACE=${POD_NAMESPACE},POD_NAME=${POD_NAME},HOSTNAME=${HOSTNAME},${SUBSTITUTIONS}"
+    else
+        args="${args} --substitutions=${SUBSTITUTIONS}"
+    fi
 else
-    args="${args} --substitutions=POD_NAMESPACE=${POD_NAMESPACE},POD_NAME=${POD_NAME},HOSTNAME=${HOSTNAME}"
+    if [ "${POD_NAMESPACE}" != "" ]
+    then
+        args="${args} --substitutions=POD_NAMESPACE=${POD_NAMESPACE},POD_NAME=${POD_NAME},HOSTNAME=${HOSTNAME}"
+    fi
 fi
 if [ "${SUBSTITUTIONFILE}" != "" ]
 then

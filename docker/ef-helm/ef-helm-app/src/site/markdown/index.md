@@ -212,7 +212,7 @@ The repository details can be specified in the pom.xml, or more typically set in
                 <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
-                <docker.registry>server.example.com:2001</docker.registry>
+                <docker.push.registry>server.example.com:2001</docker.push.registry>
                 <helm.registry>http://server.example.com/artifactory/helm/</helm.registry>
                 <helm.registry.type>ARTIFACTORY</helm.registry.type>
             </properties>
